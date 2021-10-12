@@ -1,9 +1,0 @@
-future
-matplotlib
-numpy
-pandas
-pytest
-scipy
-six
-seaborn
-joblib

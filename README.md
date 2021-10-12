@@ -1,9 +1,9 @@
-# pyHSICLasso
-[![pypi](https://img.shields.io/pypi/v/pyHSICLasso.svg)](https://pypi.python.org/pypi/pyHSICLasso)
+# pyhsiclasso
+[![pypi](https://img.shields.io/pypi/v/pyhsiclasso.svg)](https://pypi.python.org/pypi/pyhsiclasso)
 [![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
-[![Build Status](https://travis-ci.org/riken-aip/pyHSICLasso.svg?branch=master)](https://travis-ci.org/riken-aip/pyHSICLasso)
+[![Build Status](https://travis-ci.org/riken-aip/pyhsiclasso.svg?branch=master)](https://travis-ci.org/riken-aip/pyhsiclasso)
 
-pyHSICLasso is a package of the Hilbert Schmidt Independence Criterion Lasso (HSIC Lasso), which is a black box (nonlinear) feature selection method considering the nonlinear input and output relationship. HSIC Lasso can be regarded as a convex variant of widely used minimum redundancy maximum relevance (mRMR) feature selection algorithm. 
+pyhsiclasso is a package of the Hilbert Schmidt Independence Criterion Lasso (HSIC Lasso), which is a black box (nonlinear) feature selection method considering the nonlinear input and output relationship. HSIC Lasso can be regarded as a convex variant of widely used minimum redundancy maximum relevance (mRMR) feature selection algorithm. 
 
 ## Advantage of HSIC Lasso
 
@@ -24,11 +24,11 @@ $ python setup.py install
 or  
 
 ```sh
-$ pip install pyHSICLasso
+$ pip install pyhsiclasso
 ```
 
 ## Usage
-First, pyHSICLasso provides the single entry point as class `HSICLasso()`
+First, pyhsiclasso provides the single entry point as class `HSICLasso()`
 
 This class has the following methods.
 
@@ -68,7 +68,7 @@ class,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10
 
 ```
 
-For multi-variate output cases, you can specify the output by using the list (`output_list`). See [Sample code](https://github.com/riken-aip/pyHSICLasso/blob/master/example/sample_multi_variate_output.py) for details.
+For multi-variate output cases, you can specify the output by using the list (`output_list`). See [Sample code](https://github.com/riken-aip/pyhsiclasso/blob/master/example/sample_multi_variate_output.py) for details.
 
 ## Save results to a csv file
 If you want to save the feature selection results in csv file, please call the following function:
@@ -96,7 +96,7 @@ Currently, the default parameters are `B=20` and `M=3`, respectively.  If you wi
 ## Example
 
 ```py
->>> from pyHSICLasso import HSICLasso
+>>> from pyhsiclasso import HSICLasso
 >>> hsic_lasso = HSICLasso()
 
 >>> hsic_lasso.input("data.mat")

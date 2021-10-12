@@ -1,11 +1,11 @@
-pyHSICLasso
+pyhsiclasso
 ===========
 
-`pypi <https://pypi.python.org/pypi/pyHSICLasso>`__ `MIT
+`pypi <https://pypi.python.org/pypi/pyhsiclasso>`__ `MIT
 License <LICENSE>`__ `Build
-Status <https://travis-ci.org/riken-aip/pyHSICLasso>`__
+Status <https://travis-ci.org/riken-aip/pyhsiclasso>`__
 
-pyHSICLasso is a package of the Hilbert Schmidt Independence Criterion
+pyhsiclasso is a package of the Hilbert Schmidt Independence Criterion
 Lasso (HSIC Lasso), which is a nonlinear feature selection method
 considering the nonlinear input and output relationship.
 
@@ -43,12 +43,12 @@ or
 
 .. code:: sh
 
-   $ pip install pyHSICLasso
+   $ pip install pyhsiclasso
 
 Usage
 -----
 
-First, pyHSICLasso provides the single entry point as class
+First, pyhsiclasso provides the single entry point as class
 ``HSICLasso()``
 
 This class has the following methods.
@@ -101,7 +101,7 @@ Example
 
 .. code:: py
 
-   >>> from pyHSICLasso import HSICLasso
+   >>> from pyhsiclasso import HSICLasso
    >>> hsic_lasso = HSICLasso()
 
    >>> hsic_lasso.input("data.mat")
