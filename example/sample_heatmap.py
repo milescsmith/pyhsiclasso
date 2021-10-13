@@ -5,7 +5,6 @@
 from pyhsiclasso import HSICLasso
 
 
-
 def main():
     hsic_lasso = HSICLasso()
     hsic_lasso.input("../tests/test_data/matlab_data.mat")

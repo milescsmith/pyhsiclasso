@@ -9,7 +9,6 @@ import scipy.io as sio
 from pyhsiclasso import HSICLasso
 
 
-
 def main():
 
     # Numpy array input example

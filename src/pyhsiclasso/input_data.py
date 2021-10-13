@@ -6,7 +6,7 @@ import pandas as pd
 from scipy import io as spio
 
 
-def input_csv_file(file_name, output_list=["class"]):
+def input_csv_file(file_name, output_list: list[str] = ["class"]):
     return input_txt_file(file_name, output_list, ",")
 
 
@@ -14,7 +14,7 @@ def input_tsv_file(file_name, output_list=["class"]):
     return input_txt_file(file_name, output_list, "\t")
 
 
-def input_txt_file(file_name, output_list, sep):
+def input_txt_file(file_name: str, output_list: list[str], sep: str):
     df = pd.read_csv(file_name, sep=sep)
 
     # Store the column name (Feature name)
@@ -43,7 +43,9 @@ def input_txt_file(file_name, output_list, sep):
     return X_in, Y_in, featname
 
 
-def input_df(df: pd.DataFrame, output_list: list[str]=["class"], featname: list[str]=None):
+def input_df(
+    df: pd.DataFrame, output_list: list[str] = ["class"], featname: list[str] = None
+):
 
     # Store the column name (Feature name)
     if featname is None:

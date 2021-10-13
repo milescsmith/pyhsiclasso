@@ -8,6 +8,7 @@ package = "pyhsiclasso"
 nox.options.sessions = "lint", "mypy", "pytype", "tests"
 locations = "src", "tests", "noxfile.py", "docs/conf.py"
 
+
 def install_with_constraints(session: Session, *args: str, **kwargs: Any) -> None:
     """Install packages constrained by Poetry's lock file.
     This function is a wrapper for nox.sessions.Session.install. It
@@ -32,11 +33,13 @@ def install_with_constraints(session: Session, *args: str, **kwargs: Any) -> Non
         )
         session.install(f"--constraint={requirements.name}", *args, **kwargs)
 
+
 @nox.session
 def tests(session: Session) -> None:
     args = session.posargs or locations
     install_with_constraints(session, "pytest")
-    session.run('pytest')
+    session.run("pytest")
+
 
 @nox.session()
 def black(session: Session) -> None:
@@ -44,6 +47,7 @@ def black(session: Session) -> None:
     args = session.posargs or locations
     install_with_constraints(session, "black")
     session.run("black", *args)
+
 
 @nox.session
 def lint(session: Session) -> None:

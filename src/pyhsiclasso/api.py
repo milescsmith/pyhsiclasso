@@ -61,8 +61,9 @@ class HSICLasso(object):
                 del kwargs["featname"]
             else:
                 featname = df.columns.drop(output_list)
-            self._input_data_dataframe(df, )
-            
+            self._input_data_dataframe(
+                df,
+            )
 
         else:
             pass
@@ -397,14 +398,18 @@ of blocks {numblocks} will be approximated to {int(numblocks)}."
         elif len(args) == 1:
             if isinstance(args[0], str):
                 filename = Path(args[0])
-                
+
                 if not filename.exists():
-                    raise ValueError(f"{filename} cannot be found. Check your file name")
+                    raise ValueError(
+                        f"{filename} cannot be found. Check your file name"
+                    )
                 else:
                     if filename.suffix in [".csv", ".tsv", ".mat"]:
                         pass
                     else:
-                        raise TypeError("pyhsiclasso can only read .csv, .tsv .mat input files")
+                        raise TypeError(
+                            "pyhsiclasso can only read .csv, .tsv .mat input files"
+                        )
             elif isinstance(args[0], pd.DataFrame):
                 pass
         elif len(args) == 2:
@@ -463,8 +468,15 @@ of blocks {numblocks} will be approximated to {int(numblocks)}."
         self.featname = featname
         return True
 
-    def _input_data_dataframe(self, df: pd.DataFrame, output_list: list[str]=["class"], featname: list[str]=None):
-        X_in, Y_in, featname = input_df(df=df, output_list=output_list, featname=featname)
+    def _input_data_dataframe(
+        self,
+        df: pd.DataFrame,
+        output_list: list[str] = ["class"],
+        featname: list[str] = None,
+    ):
+        X_in, Y_in, featname = input_df(
+            df=df, output_list=output_list, featname=featname
+        )
         self.X_in = X_in
         self.Y_in = Y_in
         self.featname = featname

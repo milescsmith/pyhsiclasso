@@ -4,7 +4,6 @@
 from pyhsiclasso import HSICLasso
 
 
-
 def main():
     hsic_lasso = HSICLasso()
     hsic_lasso.input(
