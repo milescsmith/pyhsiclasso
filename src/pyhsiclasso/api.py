@@ -74,15 +74,15 @@ class HSICLasso(object):
 
     def regression(
         self,
-        num_feat=5,
-        B=20,
-        M=3,
-        discrete_x=False,
-        max_neighbors=10,
-        n_jobs=-1,
-        covars=np.array([]),
-        covars_kernel="Gaussian",
-    ):
+        num_feat: int = 5,
+        B: int = 20,
+        M: int = 3,
+        discrete_x: bool = False,
+        max_neighbors: int = 10,
+        n_jobs: int = -1,
+        covars: np.array = np.array([]),
+        covars_kernel: str = "Gaussian",
+    ) -> bool:
         self._run_hsic_lasso(
             num_feat=num_feat,
             y_kernel="Gaussian",
@@ -99,15 +99,15 @@ class HSICLasso(object):
 
     def classification(
         self,
-        num_feat=5,
-        B=20,
-        M=3,
-        discrete_x=False,
-        max_neighbors=10,
-        n_jobs=-1,
-        covars=np.array([]),
-        covars_kernel="Gaussian",
-    ):
+        num_feat: int = 5,
+        B: int = 20,
+        M: int = 3,
+        discrete_x: bool = False,
+        max_neighbors: int = 10,
+        n_jobs: int = -1,
+        covars: np.ndarray = np.array([]),
+        covars_kernel: str = "Gaussian",
+    ) -> bool:
         self._run_hsic_lasso(
             num_feat=num_feat,
             y_kernel="Delta",
@@ -124,16 +124,16 @@ class HSICLasso(object):
 
     def _run_hsic_lasso(
         self,
-        y_kernel,
-        num_feat,
-        B,
-        M,
-        discrete_x,
-        max_neighbors,
-        n_jobs,
-        covars,
-        covars_kernel,
-    ):
+        y_kernel: str,
+        num_feat: int,
+        B: int,
+        M: int,
+        discrete_x: bool,
+        max_neighbors: int,
+        n_jobs: int,
+        covars: np.ndarray,
+        covars_kernel: str,
+    ) -> bool:
 
         if self.X_in is None or self.Y_in is None:
             raise UnboundLocalError("Input your data")

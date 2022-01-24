@@ -39,14 +39,14 @@ def nlars(X, X_ty, num_feat, max_neighbors):
     path = lil_matrix((d, 4 * d))
     lam = np.zeros((1, 4 * d))
 
-    I = list(range(d))
+    Indices = list(range(d))
 
     XtXbeta = np.dot(X.transpose(), np.dot(X, beta))
     c = X_ty - XtXbeta
     j = c.argmax()
     C = c[j]
-    A.append(I[j])
-    I.remove(I[j])
+    A.append(Indices[j])
+    Indices.remove(Indices[j])
 
     if len(C) == 0:
         lam[0] = 0
@@ -66,7 +66,7 @@ def nlars(X, X_ty, num_feat, max_neighbors):
 
         XtXw = np.dot(X.transpose(), np.dot(X[:, A], w))
 
-        gamma1 = (C - c[I]) / (XtXw[A[0]] - XtXw[I])
+        gamma1 = (C - c[Indices]) / (XtXw[A[0]] - XtXw[Indices])
         gamma2 = -beta[A] / (w)
         gamma3 = np.zeros((1, 1))
         gamma3[0] = c[A[0]] / (XtXw[A[0]])
@@ -81,15 +81,15 @@ def nlars(X, X_ty, num_feat, max_neighbors):
         if t >= len(gamma1) and t < (len(gamma1) + len(gamma2)):
             lasso_cond = 1
             j = t - len(gamma1)
-            I.append(A[j])
+            Indices.append(A[j])
             A.remove(A[j])
         else:
             lasso_cond = 0
 
         XtXbeta = np.dot(X.transpose(), np.dot(X, beta))
         c = X_ty - XtXbeta
-        j = np.argmax(c[I])
-        C = max(c[I])
+        j = np.argmax(c[Indices])
+        C = max(c[Indices])
 
         k += 1
         path[:, k] = beta
@@ -99,8 +99,8 @@ def nlars(X, X_ty, num_feat, max_neighbors):
         else:
             lam[0, k] = C[0]
         if lasso_cond == 0:
-            A.append(I[j])
-            I.remove(I[j])
+            A.append(Indices[j])
+            Indices.remove(Indices[j])
 
     # We run numfeat + 1 iteration to update beta and path information
     # Then, we return only numfeat features
