@@ -147,16 +147,20 @@ class HSICLasso(object):
         print(f"Block HSIC Lasso B = {B}.")
 
         if discarded:
-            msg = f"B {B} must be an exact divisor of the number of samples {n}. Number \
-of blocks {numblocks} will be approximated to {int(numblocks)}."
+            msg = (
+                f"B {B} must be an exact divisor of the number of samples {n}. Number "
+                f"of blocks {numblocks} will be approximated to {int(numblocks)}."
+            )
             warnings.warn(msg, RuntimeWarning)
             numblocks = int(numblocks)
 
         # Number of permutations of the block HSIC
         M = 1 + bool(numblocks - 1) * (M - 1)
         print(f"M set to {M}.")
+        additional_text = " and Gaussian kernel for the covariates" if covars.size else ""
         print(
-            f'Using {x_kernel} kernel for the features, {y_kernel} kernel for the outcomes{" and Gaussian kernel for the covariates" if covars.size else ""}.'
+            f'Using {x_kernel} kernel for the features, {y_kernel}'
+            f'kernel for the outcomes{additional_text}.'
         )
 
         X, Xty, Ky = hsic_lasso(

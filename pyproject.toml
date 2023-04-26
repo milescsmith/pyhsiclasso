@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyhsiclasso"
-version = "1.5.0"
+version = "1.6.0"
 description = "Supervised, nonlinear feature selection method for high-dimensional datasets."
 authors = ["Makoto Yamada <makoto.yamada@riken.jp>"]
 license = "MIT"
@@ -36,16 +36,18 @@ seaborn = "^0.11.2"
 joblib = "^1.1.0"
 python = ">=3.9.2,<3.10"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 black = "^21.9b0"
-isort = "^5.9.3"
-flake8 = "^4.0.1"
 mypy = "^0.910"
 pytest = "*"
 pytest-runner = "*"
 nox = "^2021.10.1"
 jupyterlab = "^3.1.18"
+ruff = "^0.0.262"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+ignore = ["E501"]
