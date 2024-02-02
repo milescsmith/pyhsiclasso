@@ -5,7 +5,9 @@ from typing import Literal
 import numpy as np
 from joblib import Parallel, delayed
 
-from pyhsiclasso.kernel_tools import kernel_delta_norm, kernel_gaussian, kernel_type
+from pyhsiclasso.kernel_tools import kernel_delta_norm, kernel_gaussian
+
+kernel_type: Literal["Delta_norm", "Delta", "Gaussian"]
 
 
 def hsic_lasso(

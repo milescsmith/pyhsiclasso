@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 
 
-from typing import Literal
-
 import numpy as np
-
-kernel_type: Literal["Delta_norm", "Delta", "Gaussian"]
 
 
 def kernel_delta_norm(X_in_1, X_in_2):
