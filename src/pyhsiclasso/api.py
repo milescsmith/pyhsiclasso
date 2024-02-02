@@ -4,10 +4,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from pyhisclasso.hsic_lasso import compute_kernel, hsic_lasso
-from pyhisclasso.input_data import input_csv_file, input_df, input_matlab_file, input_tsv_file
-from pyhisclasso.nlars import nlars
-from pyhisclasso.plot_figure import plot_dendrogram, plot_heatmap, plot_path
+from pyhsiclasso.hsic_lasso import compute_kernel, hsic_lasso
+from pyhsiclasso.input_data import input_csv_file, input_df, input_matlab_file, input_tsv_file
+from pyhsiclasso.nlars import nlars
+from pyhsiclasso.plot_figure import plot_dendrogram, plot_heatmap, plot_path
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial import distance
 
