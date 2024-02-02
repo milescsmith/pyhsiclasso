@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 
 
 import numpy as np
@@ -124,6 +123,6 @@ def nlars(X, X_ty, num_feat, max_neighbors):
         A_neighbors_score.append(tmp[sort_index[:num_neighbors]])
 
     path_final = path[:, 0 : (k + 1)].toarray()
-    lam_final = lam[:k + 1]
+    lam_final = lam[: k + 1]
 
     return path_final, beta, A_sorted, lam_final, A_neighbors, A_neighbors_score

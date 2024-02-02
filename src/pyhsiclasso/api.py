@@ -1,20 +1,18 @@
 #!/usr/bin/env python
-# coding: utf-8
-from pathlib import Path
 import warnings
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import scipy.spatial.distance as distance
+from pyhisclasso.hsic_lasso import compute_kernel, hsic_lasso
+from pyhisclasso.input_data import input_csv_file, input_df, input_matlab_file, input_tsv_file
+from pyhisclasso.nlars import nlars
+from pyhisclasso.plot_figure import plot_dendrogram, plot_heatmap, plot_path
 from scipy.cluster.hierarchy import linkage
-
-from .hsic_lasso import compute_kernel, hsic_lasso
-from .input_data import input_csv_file, input_matlab_file, input_tsv_file, input_df
-from .nlars import nlars
-from .plot_figure import plot_dendrogram, plot_heatmap, plot_path
+from scipy.spatial import distance
 
 
-class HSICLasso(object):
+class HSICLasso:
     def __init__(self):
         self.input_file = None
         self.X_in = None
@@ -66,7 +64,8 @@ class HSICLasso(object):
             )
 
         if self.X_in is None or self.Y_in is None:
-            raise ValueError("Check your input data")
+            msg = "Check your input data"
+            raise ValueError(msg)
         self._check_shape()
         return True
 
@@ -132,9 +131,9 @@ class HSICLasso(object):
         covars: np.ndarray,
         covars_kernel: str,
     ) -> bool:
-
         if self.X_in is None or self.Y_in is None:
-            raise UnboundLocalError("Input your data")
+            msg = "Input your data"
+            raise UnboundLocalError(msg)
         self.max_neighbors = max_neighbors
         n = self.X_in.shape[1]
         B = B or n
@@ -156,10 +155,7 @@ class HSICLasso(object):
         M = 1 + bool(numblocks - 1) * (M - 1)
         print(f"M set to {M}.")
         additional_text = " and Gaussian kernel for the covariates" if covars.size else ""
-        print(
-            f'Using {x_kernel} kernel for the features, {y_kernel}'
-            f'kernel for the outcomes{additional_text}.'
-        )
+        print(f"Using {x_kernel} kernel for the features, {y_kernel}kernel for the outcomes{additional_text}.")
 
         X, Xty, Ky = hsic_lasso(
             self.X_in,
@@ -178,9 +174,7 @@ class HSICLasso(object):
 
         if covars.size:
             if self.X_in.shape[1] != covars.shape[0]:
-                raise UnboundLocalError(
-                    f"The number of rows in the covars matrix should be {str(self.X_in.shape[1])}"
-                )
+                raise UnboundLocalError(f"The number of rows in the covars matrix should be {self.X_in.shape[1]!s}")
 
             if covars_kernel == "Gaussian":
                 Kc = compute_kernel(covars.transpose(), "Gaussian", B, M, discarded)
@@ -209,7 +203,8 @@ class HSICLasso(object):
     # For kernel Hierarchical Clustering
     def linkage(self, method="ward"):
         if self.A is None:
-            raise UnboundLocalError("Run regression/classification first")
+            msg = "Run regression/classification first"
+            raise UnboundLocalError(msg)
         # selected feature name
         featname_index = []
         featname_selected = []
@@ -230,17 +225,24 @@ class HSICLasso(object):
 
     def dump(self):
         maxval = self.beta[self.A[0]][0]
-        print(
-            "============================================== HSICLasso : Result =================================================="
-        )
-        print(
-            "| Order | Feature      | Score | Top-5 Related Feature (Relatedness Score)                                          |"
-        )
+        results = [
+            " HSICLasso : Result ",
+            f"| Order | Feature      | Score | Top-{min(5, len(self.beta) - 1)} Related Feature (Relatedness Score)",
+        ]
         for i in range(len(self.A)):
-            print(
-                f"| {i + 1:<5} | {self.featname[self.A[i]]:<12} | {self.beta[self.A[i]][0] / maxval:.3f} | {self.featname[self.A_neighbors[i][1]]:<12} ({self.A_neighbors_score[i][1]:.3f}), {self.featname[self.A_neighbors[i][2]]:<12} ({self.A_neighbors_score[i][2]:.3f}),"
-                f" {self.featname[self.A_neighbors[i][3]]:<12} ({self.A_neighbors_score[i][3]:.3f}), {self.featname[self.A_neighbors[i][4]]:<12} ({self.A_neighbors_score[i][4]:.3f}), {self.featname[self.A_neighbors[i][5]]:<12} ({self.A_neighbors_score[i][5]:.3f})|"
-            )
+            ofs = f"| {i + 1:<5} | {self.featname[self.A[i]]:<12} | {self.beta[self.A[i]][0] / maxval:.3f} |"
+            rf = [
+                f" {self.featname[nn]:<12} ({ns:.3f})"
+                for nn, ns, _ in zip(self.A_neighbors[i][1:], self.A_neighbors_score[i][1:], range(5))
+            ]
+            row = ofs + ",".join(rf)
+            results.append(row + " " * max(0, len(results[1]) - len(row)) + "|")
+
+        results[1] = results[1] + " " * max(0, len(row) - len(results[1])) + "|"
+        deco = "=" * ((len(results[1]) - len(results[0])) // 2)
+        results[0] = deco + results[0] + deco
+
+        print("\n".join(results))
 
         # print("===== HSICLasso : Path ======")
         # for i in range(len(self.A)):
@@ -248,12 +250,9 @@ class HSICLasso(object):
         # return True
 
     def plot_heatmap(self, filepath="heatmap.png"):
-        if (
-            self.linkage_dist is None
-            or self.hclust_featname is None
-            or self.hclust_featnameindex is None
-        ):
-            raise UnboundLocalError("Input your data")
+        if self.linkage_dist is None or self.hclust_featname is None or self.hclust_featnameindex is None:
+            msg = "Input your data"
+            raise UnboundLocalError(msg)
         plot_heatmap(
             self.X_in[self.hclust_featnameindex, :],
             self.linkage_dist,
@@ -264,13 +263,15 @@ class HSICLasso(object):
 
     def plot_dendrogram(self, filepath="dendrogram.png"):
         if self.linkage_dist is None or self.hclust_featname is None:
-            raise UnboundLocalError("Input your data")
+            msg = "Input your data"
+            raise UnboundLocalError(msg)
         plot_dendrogram(self.linkage_dist, self.hclust_featname, filepath)
         return True
 
     def plot_path(self, filepath="path.png"):
         if self.path is None or self.beta is None or self.A is None:
-            raise UnboundLocalError("Input your data")
+            msg = "Input your data"
+            raise UnboundLocalError(msg)
         plot_path(self.path, self.beta, self.A, filepath)
         return True
 
@@ -280,9 +281,7 @@ class HSICLasso(object):
         return [self.featname[i] for i in index]
 
     def get_features_neighbors(self, feat_index=0, num_neighbors=5):
-        index = self.get_index_neighbors(
-            feat_index=feat_index, num_neighbors=num_neighbors
-        )
+        index = self.get_index_neighbors(feat_index=feat_index, num_neighbors=num_neighbors)
 
         return [self.featname[i] for i in index]
 
@@ -294,7 +293,8 @@ class HSICLasso(object):
 
     def get_index_neighbors(self, feat_index=0, num_neighbors=5):
         if feat_index > len(self.A) - 1:
-            raise IndexError("Index does not exist")
+            msg = "Index does not exist"
+            raise IndexError(msg)
 
         num_neighbors = min(num_neighbors, self.max_neighbors)
 
@@ -302,7 +302,8 @@ class HSICLasso(object):
 
     def get_index_neighbors_score(self, feat_index=0, num_neighbors=5):
         if feat_index > len(self.A) - 1:
-            raise IndexError("Index does not exist")
+            msg = "Index does not exist"
+            raise IndexError(msg)
 
         num_neighbors = min(num_neighbors, self.max_neighbors)
 
@@ -310,7 +311,8 @@ class HSICLasso(object):
 
     def save_HSICmatrix(self, filename="HSICmatrix.csv"):
         if self.X_in is None or self.Y_in is None:
-            raise UnboundLocalError("Input your data")
+            msg = "Input your data"
+            raise UnboundLocalError(msg)
 
         self.X, self.X_ty = hsic_lasso(self.X_in, self.Y_in, "Gaussian")
 
@@ -344,23 +346,19 @@ class HSICLasso(object):
                     if self.featname[self.A_neighbors[i][j]] not in featscore:
                         featscore[self.featname[self.A_neighbors[i][j]]] = HSIC_XY * HSIC_XX
 
-                        corrcoeff = np.corrcoef(
-                            self.X_in[self.A_neighbors[i][j]], self.Y_in
-                        )[0][1]
+                        corrcoeff = np.corrcoef(self.X_in[self.A_neighbors[i][j]], self.Y_in)[0][1]
 
                         featcorrcoeff[self.featname[self.A_neighbors[i][j]]] = corrcoeff
                     else:
-                        featscore[self.featname[self.A_neighbors[i][j]]] += (
-                            HSIC_XY * HSIC_XX
-                        )
+                        featscore[self.featname[self.A_neighbors[i][j]]] += HSIC_XY * HSIC_XX
 
             # Sorting decending order
             featscore_sorted = sorted(featscore.items(), key=lambda x: x[1], reverse=True)
 
             # Add Pearson correlation for comparison
             fout.write("Feature,Score,Pearson Corr\n")
-            for (key, val) in featscore_sorted:
-                fout.write(f"{key},{str(val)},{str(featcorrcoeff[key])}\n")
+            for key, val in featscore_sorted:
+                fout.write(f"{key},{val!s},{featcorrcoeff[key]!s}\n")
 
     def save_param(self, filename="param.csv"):
         # Save parameters
@@ -389,80 +387,77 @@ class HSICLasso(object):
 
     def _check_args(self, args):
         if len(args) == 0 or len(args) >= 4:
-            raise SyntaxError(
-                "Input as input_data(file_name) or \
-                input_data(X_in, Y_in)"
-            )
+            msg = "Input as input_data(file_name) or                 input_data(X_in, Y_in)"
+            raise SyntaxError(msg)
         elif len(args) == 1:
             if isinstance(args[0], str):
                 filename = Path(args[0])
 
                 if not filename.exists():
-                    raise ValueError(
-                        f"{filename} cannot be found. Check your file name"
-                    )
+                    msg = f"{filename} cannot be found. Check your file name"
+                    raise ValueError(msg)
                 if filename.suffix not in [".csv", ".tsv", ".mat"]:
-                    raise TypeError(
-                        "pyhsiclasso can only read .csv, .tsv .mat input files"
-                    )
+                    msg = "pyhsiclasso can only read .csv, .tsv .mat input files"
+                    raise TypeError(msg)
         elif len(args) == 2:
             if isinstance(args[0], str):
-                raise TypeError("Check arg type")
+                msg = "Check arg type"
+                raise TypeError(msg)
             elif isinstance(args[0], list):
                 if not isinstance(args[1], list):
-                    raise TypeError("Check arg type")
+                    msg = "Check arg type"
+                    raise TypeError(msg)
             elif isinstance(args[0], np.ndarray):
                 if not isinstance(args[1], np.ndarray):
-                    raise TypeError("Check arg type")
+                    msg = "Check arg type"
+                    raise TypeError(msg)
             else:
-                raise TypeError("Check arg type")
+                msg = "Check arg type"
+                raise TypeError(msg)
         elif len(args) == 3:
             if (
-                isinstance(args[0], np.ndarray)
-                and isinstance(args[1], np.ndarray)
-                and isinstance(args[2], list)
+                not isinstance(args[0], np.ndarray)
+                or not isinstance(args[1], np.ndarray)
+                or not isinstance(args[2], list)
             ):
-                pass
-            else:
-                raise TypeError("Check arg type")
+                msg = "Check arg type"
+                raise TypeError(msg)
 
         return True
 
     def _input_data_file(self, file_name, output_list):
         ext = file_name[-4:]
         if ext == ".csv":
-            self.X_in, self.Y_in, self.featname = input_csv_file(
-                file_name, output_list=output_list
-            )
+            self.X_in, self.Y_in, self.featname = input_csv_file(file_name, output_list=output_list)
         elif ext == ".tsv":
-            self.X_in, self.Y_in, self.featname = input_tsv_file(
-                file_name, output_list=output_list
-            )
+            self.X_in, self.Y_in, self.featname = input_tsv_file(file_name, output_list=output_list)
         elif ext == ".mat":
             self.X_in, self.Y_in, self.featname = input_matlab_file(file_name)
         return True
 
     def _input_data_list(self, X_in, Y_in):
         if isinstance(Y_in[0], list):
-            raise ValueError("Check your input data")
+            msg = "Check your input data"
+            raise ValueError(msg)
         self.X_in = np.array(X_in).T
         self.Y_in = np.array(Y_in).reshape(1, len(Y_in))
         return True
 
     def _input_data_ndarray(self, X_in, Y_in, featname=None):
         if len(Y_in.shape) == 2:
-            raise ValueError("Check your input data")
+            msg = "Check your input data"
+            raise ValueError(msg)
         self.X_in = X_in.T
         self.Y_in = Y_in.reshape(1, len(Y_in))
         self.featname = featname
         return True
 
-    def _input_data_dataframe(self, df: pd.DataFrame, output_list: list[str] = None, featname: list[str] = None):
+    def _input_data_dataframe(
+        self, df: pd.DataFrame, output_list: list[str] | None = None, featname: list[str] | None = None
+    ):
         if output_list is None:
             output_list = ["class"]
-        X_in, Y_in, featname = input_df(
-            df=df, output_list=output_list, featname=featname
-        )
+        X_in, Y_in, featname = input_df(df=df, output_list=output_list, featname=featname)
         self.X_in = X_in
         self.Y_in = Y_in
         self.featname = featname
@@ -474,7 +469,8 @@ class HSICLasso(object):
         # if y_row_len != 1:
         #    raise ValueError("Check your input data")
         if x_col_len != y_col_len:
-            raise ValueError("The number of samples in input and output should be same")
+            msg = "The number of samples in input and output should be same"
+            raise ValueError(msg)
         return True
 
     def _permute_data(self, seed=None):

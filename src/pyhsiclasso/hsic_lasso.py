@@ -1,17 +1,18 @@
 #!/usr/bin/env python
-# coding: utf-8
+
+from typing import Literal
 
 import numpy as np
 from joblib import Parallel, delayed
 
-from .kernel_tools import kernel_delta_norm, kernel_gaussian
+from pyhsiclasso.kernel_tools import kernel_delta_norm, kernel_gaussian, kernel_type
 
 
 def hsic_lasso(
     X: np.array,
     Y: np.array,
     y_kernel: str,
-    x_kernel: str = "Gaussian",
+    x_kernel: kernel_type = "Gaussian",
     n_jobs: int = -1,
     discarded: int = 0,
     B: int = 0,
@@ -37,9 +38,7 @@ def hsic_lasso(
     # Preparing design matrix for HSIC Lars
     result = Parallel(n_jobs=n_jobs)(
         [
-            delayed(parallel_compute_kernel)(
-                np.reshape(X[k, :], (1, n)), x_kernel, k, B, M, n, discarded
-            )
+            delayed(parallel_compute_kernel)(np.reshape(X[k, :], (1, n)), x_kernel, k, B, M, n, discarded)
             for k in range(d)
         ]
     )
@@ -58,10 +57,7 @@ def hsic_lasso(
     return K, KtL, L
 
 
-def compute_kernel(
-    x: np.array, kernel: str, B: int = 0, M: int = 1, discarded: int = 0
-):
-
+def compute_kernel(x: np.array, kernel: kernel_type, B: int = 0, M: int = 1, discarded: int = 0):
     d, n = x.shape
 
     H = np.eye(B, dtype=np.float32) - 1 / B * np.ones(B, dtype=np.float32)
@@ -72,7 +68,7 @@ def compute_kernel(
         x = (x / (x.std() + 10e-20)).astype(np.float32)
 
     st = 0
-    ed = B ** 2
+    ed = B**2
     index = np.arange(n)
     for m in range(M):
         np.random.seed(m)
@@ -91,14 +87,11 @@ def compute_kernel(
             # Normalize HSIC tr(k*k) = 1
             k = k / (np.linalg.norm(k, "fro") + 10e-10)
             K[st:ed] = k.flatten()
-            st += B ** 2
-            ed += B ** 2
+            st += B**2
+            ed += B**2
 
     return K
 
 
-def parallel_compute_kernel(
-    x: np.array, kernel: str, feature_idx: int, B: int, M: int, n: int, discarded: int
-):
-
+def parallel_compute_kernel(x: np.array, kernel: kernel_type, feature_idx: int, B: int, M: int, n: int, discarded: int):
     return (feature_idx, compute_kernel(x, kernel, B, M, discarded))

@@ -1,8 +1,11 @@
 #!/usr/bin/env python
-# coding: utf-8
 
+
+from typing import Literal
 
 import numpy as np
+
+kernel_type: Literal["Delta_norm", "Delta", "Gaussian"]
 
 
 def kernel_delta_norm(X_in_1, X_in_2):
@@ -36,9 +39,5 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
     n_2 = X_in_2.shape[1]
     X_in_12 = np.sum(np.power(X_in_1, 2), 0)
     X_in_22 = np.sum(np.power(X_in_2, 2), 0)
-    dist_2 = (
-        np.tile(X_in_22, (n_1, 1))
-        + np.tile(X_in_12, (n_2, 1)).transpose()
-        - 2 * np.dot(X_in_1.T, X_in_2)
-    )
+    dist_2 = np.tile(X_in_22, (n_1, 1)) + np.tile(X_in_12, (n_2, 1)).transpose() - 2 * np.dot(X_in_1.T, X_in_2)
     return np.exp(-dist_2 / (2 * np.power(sigma, 2)))

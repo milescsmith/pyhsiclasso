@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 
 import pandas as pd
 import seaborn as sns
@@ -20,9 +19,7 @@ microarray_cmap = LinearSegmentedColormap(
 def plot_heatmap(X, row_linkage, featname, filepath):
     df = pd.DataFrame(X)
     df.index = featname
-    cg = sns.clustermap(
-        df, center=0, row_linkage=row_linkage, method="ward", cmap=microarray_cmap
-    )
+    cg = sns.clustermap(df, center=0, row_linkage=row_linkage, method="ward", cmap=microarray_cmap)
     cg.ax_heatmap.set_xticklabels("")
     plt.setp(cg.ax_heatmap.yaxis.get_majorticklabels(), rotation=0)
     plt.setp(cg.ax_heatmap.xaxis.get_majorticklabels(), rotation=90)

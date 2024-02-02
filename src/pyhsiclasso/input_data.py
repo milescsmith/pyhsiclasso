@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-# coding: utf-8
 
 
 import pandas as pd
 from scipy import io as spio
 
 
-def input_csv_file(file_name, output_list: list[str] = None):
+def input_csv_file(file_name, output_list: list[str] | None = None):
     if output_list is None:
         output_list = ["class"]
     return input_txt_file(file_name, output_list, ",")
@@ -28,7 +27,8 @@ def input_txt_file(file_name: str, output_list: list[str], sep: str):
 
     for output_name in output_list:
         if output_name not in featname:
-            raise ValueError(f"Output variable, {output_name}, not found")
+            msg = f"Output variable, {output_name}, not found"
+            raise ValueError(msg)
 
         tmp = featname.index(output_name)
         output_index.append(tmp)
@@ -46,8 +46,7 @@ def input_txt_file(file_name: str, output_list: list[str], sep: str):
     return X_in, Y_in, featname
 
 
-def input_df(df: pd.DataFrame, output_list: list[str] = None, featname: list[str] = None):
-
+def input_df(df: pd.DataFrame, output_list: list[str] | None = None, featname: list[str] | None = None):
     if output_list is None:
         output_list = ["class"]
     # Store the column name (Feature name)
@@ -63,7 +62,8 @@ def input_df(df: pd.DataFrame, output_list: list[str] = None, featname: list[str
     elif len(output_name) > 1:
         Y_in = df.loc[:, output_name].values.T
     else:
-        raise ValueError(f"Output variable, {output_name}, not found")
+        msg = f"Output variable, {output_name}, not found"
+        raise ValueError(msg)
     print(f"X_in: {X_in.shape}, Y_in: {Y_in.shape}")
     return X_in, Y_in, featname
 
@@ -84,7 +84,8 @@ def input_matlab_file(file_name):
         X_in = data["x_in"]
         Y_in = data["y_in"]
     else:
-        raise KeyError("not find input data")
+        msg = "not find input data"
+        raise KeyError(msg)
 
     # Create feature list
     d = X_in.shape[0]
