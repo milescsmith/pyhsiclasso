@@ -44,7 +44,7 @@ def plot_path(path, beta, A, filepath):
     plt.xlabel("lambda")
     plt.ylabel("cofficients")
     for ind in range(len(A)):
-        plt.plot(t, path[A[ind], :], label="{}".format(A[ind] + 1))
+        plt.plot(t, path[A[ind], :], label=f"{A[ind] + 1}")
     plt.legend()
     plt.savefig(filepath)
     plt.clf()

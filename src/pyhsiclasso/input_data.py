@@ -6,11 +6,15 @@ import pandas as pd
 from scipy import io as spio
 
 
-def input_csv_file(file_name, output_list: list[str] = ["class"]):
+def input_csv_file(file_name, output_list: list[str] = None):
+    if output_list is None:
+        output_list = ["class"]
     return input_txt_file(file_name, output_list, ",")
 
 
-def input_tsv_file(file_name, output_list=["class"]):
+def input_tsv_file(file_name, output_list=None):
+    if output_list is None:
+        output_list = ["class"]
     return input_txt_file(file_name, output_list, "\t")
 
 
@@ -19,17 +23,16 @@ def input_txt_file(file_name: str, output_list: list[str], sep: str):
 
     # Store the column name (Feature name)
     featname = df.columns.tolist()
-    input_index = list(range(0, len(featname)))
+    input_index = list(range(len(featname)))
     output_index = []
 
     for output_name in output_list:
-        if output_name in featname:
-            tmp = featname.index(output_name)
-            output_index.append(tmp)
-            input_index.remove(tmp)
-        else:
-            raise ValueError("Output variable, %s, not found" % (output_name))
+        if output_name not in featname:
+            raise ValueError(f"Output variable, {output_name}, not found")
 
+        tmp = featname.index(output_name)
+        output_index.append(tmp)
+        input_index.remove(tmp)
     for output_name in output_list:
         featname.remove(output_name)
 
@@ -43,10 +46,10 @@ def input_txt_file(file_name: str, output_list: list[str], sep: str):
     return X_in, Y_in, featname
 
 
-def input_df(
-    df: pd.DataFrame, output_list: list[str] = ["class"], featname: list[str] = None
-):
+def input_df(df: pd.DataFrame, output_list: list[str] = None, featname: list[str] = None):
 
+    if output_list is None:
+        output_list = ["class"]
     # Store the column name (Feature name)
     if featname is None:
         featname = list(df.columns.drop(output_list))

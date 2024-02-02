@@ -32,7 +32,6 @@ def nlars(X, X_ty, num_feat, max_neighbors):
     """
     n, d = X.shape
 
-    A = []
     A_neighbors = []
     A_neighbors_score = []
     beta = np.zeros((d, 1), dtype=np.float32)
@@ -45,7 +44,7 @@ def nlars(X, X_ty, num_feat, max_neighbors):
     c = X_ty - XtXbeta
     j = c.argmax()
     C = c[j]
-    A.append(Indices[j])
+    A = [Indices[j]]
     Indices.remove(Indices[j])
 
     if len(C) == 0:
@@ -118,13 +117,13 @@ def nlars(X, X_ty, num_feat, max_neighbors):
 
     # Search up to 10 nighbors
     num_neighbors = max_neighbors + 1
-    for i in range(0, len(A_sorted)):
+    for i in range(len(A_sorted)):
         tmp = XtXA[:, i]
         sort_index = sorted(range(len(tmp)), key=lambda k: tmp[k], reverse=True)
-        A_neighbors.append(sort_index[0:num_neighbors])
-        A_neighbors_score.append(tmp[sort_index[0:num_neighbors]])
+        A_neighbors.append(sort_index[:num_neighbors])
+        A_neighbors_score.append(tmp[sort_index[:num_neighbors]])
 
     path_final = path[:, 0 : (k + 1)].toarray()
-    lam_final = lam[0 : (k + 1)]
+    lam_final = lam[:k + 1]
 
     return path_final, beta, A_sorted, lam_final, A_neighbors, A_neighbors_score

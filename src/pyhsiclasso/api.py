@@ -65,8 +65,6 @@ class HSICLasso(object):
                 df,
             )
 
-        else:
-            pass
         if self.X_in is None or self.Y_in is None:
             raise ValueError("Check your input data")
         self._check_shape()
@@ -139,7 +137,7 @@ class HSICLasso(object):
             raise UnboundLocalError("Input your data")
         self.max_neighbors = max_neighbors
         n = self.X_in.shape[1]
-        B = B if B else n
+        B = B or n
         x_kernel = "Delta" if discrete_x else "Gaussian"
         numblocks = n / B
         discarded = n % B
@@ -325,71 +323,67 @@ class HSICLasso(object):
     def save_score(self, filename="aggregated_score.csv"):
         maxval = self.beta[self.A[0]][0]
 
-        # print(maxval + ' ' + maxval_)
-        fout = open(filename, "w")
-        featscore = {}
-        featcorrcoeff = {}
-        for i in range(len(self.A)):
-            HSIC_XY = self.beta[self.A[i]][0] / maxval
+        with open(filename, "w") as fout:
+            featscore = {}
+            featcorrcoeff = {}
+            for i in range(len(self.A)):
+                HSIC_XY = self.beta[self.A[i]][0] / maxval
 
-            if self.featname[self.A[i]] not in featscore:
-                featscore[self.featname[self.A[i]]] = HSIC_XY
+                if self.featname[self.A[i]] not in featscore:
+                    featscore[self.featname[self.A[i]]] = HSIC_XY
 
-                corrcoeff = np.corrcoef(self.X_in[self.A[i]], self.Y_in)[0][1]
+                    corrcoeff = np.corrcoef(self.X_in[self.A[i]], self.Y_in)[0][1]
 
-                featcorrcoeff[self.featname[self.A[i]]] = corrcoeff
+                    featcorrcoeff[self.featname[self.A[i]]] = corrcoeff
 
-            else:
-                featscore[self.featname[self.A[i]]] += HSIC_XY
-
-            for j in range(1, self.max_neighbors + 1):
-                HSIC_XX = self.A_neighbors_score[i][j]
-                if self.featname[self.A_neighbors[i][j]] not in featscore:
-                    featscore[self.featname[self.A_neighbors[i][j]]] = HSIC_XY * HSIC_XX
-
-                    corrcoeff = np.corrcoef(
-                        self.X_in[self.A_neighbors[i][j]], self.Y_in
-                    )[0][1]
-
-                    featcorrcoeff[self.featname[self.A_neighbors[i][j]]] = corrcoeff
                 else:
-                    featscore[self.featname[self.A_neighbors[i][j]]] += (
-                        HSIC_XY * HSIC_XX
-                    )
+                    featscore[self.featname[self.A[i]]] += HSIC_XY
 
-        # Sorting decending order
-        featscore_sorted = sorted(featscore.items(), key=lambda x: x[1], reverse=True)
+                for j in range(1, self.max_neighbors + 1):
+                    HSIC_XX = self.A_neighbors_score[i][j]
+                    if self.featname[self.A_neighbors[i][j]] not in featscore:
+                        featscore[self.featname[self.A_neighbors[i][j]]] = HSIC_XY * HSIC_XX
 
-        # Add Pearson correlation for comparison
-        fout.write("Feature,Score,Pearson Corr\n")
-        for (key, val) in featscore_sorted:
-            fout.write(f"{key},{str(val)},{str(featcorrcoeff[key])}\n")
+                        corrcoeff = np.corrcoef(
+                            self.X_in[self.A_neighbors[i][j]], self.Y_in
+                        )[0][1]
 
-        fout.close()
+                        featcorrcoeff[self.featname[self.A_neighbors[i][j]]] = corrcoeff
+                    else:
+                        featscore[self.featname[self.A_neighbors[i][j]]] += (
+                            HSIC_XY * HSIC_XX
+                        )
+
+            # Sorting decending order
+            featscore_sorted = sorted(featscore.items(), key=lambda x: x[1], reverse=True)
+
+            # Add Pearson correlation for comparison
+            fout.write("Feature,Score,Pearson Corr\n")
+            for (key, val) in featscore_sorted:
+                fout.write(f"{key},{str(val)},{str(featcorrcoeff[key])}\n")
 
     def save_param(self, filename="param.csv"):
         # Save parameters
         maxval = self.beta[self.A[0]][0]
 
-        fout = open(filename, "w")
-        sstr = "Feature,Score,"
-        for j in range(1, self.max_neighbors + 1):
-            sstr = f"{sstr}Neighbor {int(j)}, Neighbor {int(j)} score,"
-
-        sstr = f"{sstr}\n"
-        fout.write(sstr)
-        for i in range(len(self.A)):
-            tmp = []
-            tmp.append(self.featname[self.A[i]])
-            tmp.append(str(self.beta[self.A[i]][0] / maxval))
+        with open(filename, "w") as fout:
+            sstr = "Feature,Score,"
             for j in range(1, self.max_neighbors + 1):
-                tmp.append(str(self.featname[self.A_neighbors[i][j]]))
-                tmp.append(str(self.A_neighbors_score[i][j]))
+                sstr = f"{sstr}Neighbor {int(j)}, Neighbor {int(j)} score,"
 
-            sstr = f"{','.join(tmp)}\n"
+            sstr = f"{sstr}\n"
             fout.write(sstr)
-
-        fout.close()
+            for i in range(len(self.A)):
+                tmp = [self.featname[self.A[i]], str(self.beta[self.A[i]][0] / maxval)]
+                for j in range(1, self.max_neighbors + 1):
+                    tmp.extend(
+                        (
+                            str(self.featname[self.A_neighbors[i][j]]),
+                            str(self.A_neighbors_score[i][j]),
+                        )
+                    )
+                sstr = f"{','.join(tmp)}\n"
+                fout.write(sstr)
 
     # ========================================
 
@@ -407,27 +401,18 @@ class HSICLasso(object):
                     raise ValueError(
                         f"{filename} cannot be found. Check your file name"
                     )
-                else:
-                    if filename.suffix in [".csv", ".tsv", ".mat"]:
-                        pass
-                    else:
-                        raise TypeError(
-                            "pyhsiclasso can only read .csv, .tsv .mat input files"
-                        )
-            elif isinstance(args[0], pd.DataFrame):
-                pass
+                if filename.suffix not in [".csv", ".tsv", ".mat"]:
+                    raise TypeError(
+                        "pyhsiclasso can only read .csv, .tsv .mat input files"
+                    )
         elif len(args) == 2:
             if isinstance(args[0], str):
                 raise TypeError("Check arg type")
             elif isinstance(args[0], list):
-                if isinstance(args[1], list):
-                    pass
-                else:
+                if not isinstance(args[1], list):
                     raise TypeError("Check arg type")
             elif isinstance(args[0], np.ndarray):
-                if isinstance(args[1], np.ndarray):
-                    pass
-                else:
+                if not isinstance(args[1], np.ndarray):
                     raise TypeError("Check arg type")
             else:
                 raise TypeError("Check arg type")
@@ -472,12 +457,9 @@ class HSICLasso(object):
         self.featname = featname
         return True
 
-    def _input_data_dataframe(
-        self,
-        df: pd.DataFrame,
-        output_list: list[str] = ["class"],
-        featname: list[str] = None,
-    ):
+    def _input_data_dataframe(self, df: pd.DataFrame, output_list: list[str] = None, featname: list[str] = None):
+        if output_list is None:
+            output_list = ["class"]
         X_in, Y_in, featname = input_df(
             df=df, output_list=output_list, featname=featname
         )

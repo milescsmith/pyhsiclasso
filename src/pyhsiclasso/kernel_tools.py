@@ -41,5 +41,4 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
         + np.tile(X_in_12, (n_2, 1)).transpose()
         - 2 * np.dot(X_in_1.T, X_in_2)
     )
-    K = np.exp(-dist_2 / (2 * np.power(sigma, 2)))
-    return K
+    return np.exp(-dist_2 / (2 * np.power(sigma, 2)))
