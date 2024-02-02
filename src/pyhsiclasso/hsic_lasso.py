@@ -7,14 +7,12 @@ from joblib import Parallel, delayed
 
 from pyhsiclasso.kernel_tools import kernel_delta_norm, kernel_gaussian
 
-kernel_type: Literal["Delta_norm", "Delta", "Gaussian"]
-
 
 def hsic_lasso(
     X: np.array,
     Y: np.array,
     y_kernel: str,
-    x_kernel: kernel_type = "Gaussian",
+    x_kernel: Literal["Delta_norm", "Delta", "Gaussian"] = "Gaussian",
     n_jobs: int = -1,
     discarded: int = 0,
     B: int = 0,
@@ -59,7 +57,7 @@ def hsic_lasso(
     return K, KtL, L
 
 
-def compute_kernel(x: np.array, kernel: kernel_type, B: int = 0, M: int = 1, discarded: int = 0):
+def compute_kernel(x: np.array, kernel: Literal["Delta_norm", "Delta", "Gaussian"], B: int = 0, M: int = 1, discarded: int = 0):
     d, n = x.shape
 
     H = np.eye(B, dtype=np.float32) - 1 / B * np.ones(B, dtype=np.float32)
@@ -95,5 +93,5 @@ def compute_kernel(x: np.array, kernel: kernel_type, B: int = 0, M: int = 1, dis
     return K
 
 
-def parallel_compute_kernel(x: np.array, kernel: kernel_type, feature_idx: int, B: int, M: int, n: int, discarded: int):
+def parallel_compute_kernel(x: np.array, kernel: Literal["Delta_norm", "Delta", "Gaussian"], feature_idx: int, B: int, M: int, n: int, discarded: int):
     return (feature_idx, compute_kernel(x, kernel, B, M, discarded))

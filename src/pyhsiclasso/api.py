@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from pyhsiclasso.hsic_lasso import compute_kernel, hsic_lasso
-from pyhsiclasso.input_data import input_csv_file, input_df, input_matlab_file, input_tsv_file
+from pyhsiclasso.input_data import input_file
 from pyhsiclasso.nlars import nlars
 from pyhsiclasso.plot_figure import plot_dendrogram, plot_heatmap, plot_path
 from scipy.cluster.hierarchy import linkage
@@ -425,14 +425,8 @@ class HSICLasso:
 
         return True
 
-    def _input_data_file(self, file_name, output_list):
-        ext = file_name[-4:]
-        if ext == ".csv":
-            self.X_in, self.Y_in, self.featname = input_csv_file(file_name, output_list=output_list)
-        elif ext == ".tsv":
-            self.X_in, self.Y_in, self.featname = input_tsv_file(file_name, output_list=output_list)
-        elif ext == ".mat":
-            self.X_in, self.Y_in, self.featname = input_matlab_file(file_name)
+    def _input_data_file(self, file_name, output_list) -> bool:
+        self.X_in, self.Y_in, self.featname = input_file(file_name, output_list=output_list)
         return True
 
     def _input_data_list(self, X_in, Y_in):

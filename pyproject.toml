@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyhsiclasso"
-version = "1.6.2"
+version = "1.7.0"
 description = "Supervised, nonlinear feature selection method for high-dimensional datasets."
 authors = ["Makoto Yamada <makoto.yamada@riken.jp>"]
 license = "MIT"
@@ -40,6 +40,7 @@ black = "^24.1.1"
 ruff = "^0.2.0"
 pytest-runner = "^6.0.1"
 pytest = "^8.0.0"
+nox-poetry = "^1.0.3"
 
 
 [build-system]

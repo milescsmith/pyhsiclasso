@@ -20,7 +20,7 @@ class InputTest(unittest.TestCase):
             self.hsic_lasso._check_args([1, 2, 3])
         with self.assertRaises(ValueError):
             self.hsic_lasso._check_args(["txt"])
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             self.hsic_lasso._check_args(["hoge.txt"])
         with self.assertRaises(TypeError):
             self.hsic_lasso._check_args(["hogecsv"])
