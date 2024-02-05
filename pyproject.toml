@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyhsiclasso"
-version = "1.7.0"
+version = "1.8.0"
 description = "Supervised, nonlinear feature selection method for high-dimensional datasets."
 authors = ["Makoto Yamada <makoto.yamada@riken.jp>"]
 license = "MIT"
