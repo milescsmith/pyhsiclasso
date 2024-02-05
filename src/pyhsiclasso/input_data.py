@@ -93,18 +93,17 @@ def input_matlab_file(file_name):
 
     return X_in, Y_in, featname
 
-def input_file(file_name: Path | str) -> tuple:
-    
+
+def input_file(file_name: Path | str, **kwargs) -> tuple:
     file_name = Path(file_name) if isinstance(file_name, str) else file_name
     print(f"file is {file_name} of type {type(file_name)}")
     match file_name.suffix:
         case ".csv":
-            X_in, Y_in, featname = input_csv_file(file_name)
+            X_in, Y_in, featname = input_csv_file(file_name, **kwargs)
         case ".tsv":
-            X_in, Y_in, featname = input_tsv_file(file_name)
+            X_in, Y_in, featname = input_tsv_file(file_name, **kwargs)
         case ".mat":
             X_in, Y_in, featname = input_matlab_file(file_name)
         case ".txt":
-            X_in, Y_in, featname = input_txt_file(file_name)
-    
+            X_in, Y_in, featname = input_txt_file(file_name, **kwargs)
     return X_in, Y_in, featname

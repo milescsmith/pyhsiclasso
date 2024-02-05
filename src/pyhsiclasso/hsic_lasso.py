@@ -57,7 +57,9 @@ def hsic_lasso(
     return K, KtL, L
 
 
-def compute_kernel(x: np.array, kernel: Literal["Delta_norm", "Delta", "Gaussian"], B: int = 0, M: int = 1, discarded: int = 0):
+def compute_kernel(
+    x: np.array, kernel: Literal["Delta_norm", "Delta", "Gaussian"], B: int = 0, M: int = 1, discarded: int = 0
+):
     d, n = x.shape
 
     H = np.eye(B, dtype=np.float32) - 1 / B * np.ones(B, dtype=np.float32)
@@ -93,5 +95,13 @@ def compute_kernel(x: np.array, kernel: Literal["Delta_norm", "Delta", "Gaussian
     return K
 
 
-def parallel_compute_kernel(x: np.array, kernel: Literal["Delta_norm", "Delta", "Gaussian"], feature_idx: int, B: int, M: int, n: int, discarded: int):
+def parallel_compute_kernel(
+    x: np.array,
+    kernel: Literal["Delta_norm", "Delta", "Gaussian"],
+    feature_idx: int,
+    B: int,
+    M: int,
+    n: int,
+    discarded: int,
+):
     return (feature_idx, compute_kernel(x, kernel, B, M, discarded))

@@ -1,155 +1,181 @@
 #!/usr/bin.env python
-# coding: utf-8
 
-
-import unittest
+import importlib.resources as ir
+from importlib.abc import Traversable
+from typing import Literal
 
 import numpy as np
+import numpy.typing as npt
+import pytest
 
 from pyhsiclasso import HSICLasso
 
 
-class InputTest(unittest.TestCase):
-    def setUp(self):
-        self.hsic_lasso = HSICLasso()
+@pytest.fixture
+def hsic_obj():
+    return HSICLasso()
 
-    def test_check_arg(self):
-        with self.assertRaises(SyntaxError):
-            self.hsic_lasso._check_args([])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args([1, 2, 3])
-        with self.assertRaises(ValueError):
-            self.hsic_lasso._check_args(["txt"])
-        with self.assertRaises(ValueError):
-            self.hsic_lasso._check_args(["hoge.txt"])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args(["hogecsv"])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args([123])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args([[1, 2, 3]])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args([np.array([1, 2, 3])])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args(["hoge", "hoge"])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args(["hoge", [1, 2, 3]])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args([[1, 2, 3], "hoge"])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args(["hoge", np.array([1, 2, 3])])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args([np.array([1, 2, 3]), "hoge"])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args([123, [1, 2, 3]])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args([[1, 2, 3], 123])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args([123, np.array([1, 2, 3])])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args([np.array([1, 2, 3]), 123])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args([[1, 2, 3], np.array([1, 2, 3])])
-        with self.assertRaises(TypeError):
-            self.hsic_lasso._check_args([np.array([1, 2, 3]), [1, 2, 3]])
 
-        self.assertTrue(self.hsic_lasso._check_args(["hoge.csv"]))
-        self.assertTrue(self.hsic_lasso._check_args(["hoge.tsv"]))
-        self.assertTrue(self.hsic_lasso._check_args(["hoge.mat"]))
-        self.assertTrue(
-            self.hsic_lasso._check_args([np.array([1, 2, 3]), np.array([1, 2, 3])])
-        )
-        self.assertTrue(self.hsic_lasso._check_args([[1, 2, 3], [1, 2, 3]]))
+def test_syntax(hsic_obj: HSICLasso):
+    with pytest.raises(SyntaxError) as exc_info:
+        hsic_obj._check_args([])
+        assert exc_info.type is SyntaxError
 
-    def test_input_data_file(self):
-        self.assertTrue("./tests/test_data/csv_data.csv")
-        self.assertTrue("./tests/test_data/tsv_data.tsv")
-        self.assertTrue("./tests/test_data/mat_data.mat")
 
-    def test_input_data_list(self):
-        self.hsic_lasso._input_data_list([[1, 1, 1], [2, 2, 2]], [1, 2])
-        X_in_row, X_in_col = self.hsic_lasso.X_in.shape
-        Y_in_row, Y_in_col = self.hsic_lasso.Y_in.shape
-        self.assertEqual(X_in_row, 3)
-        self.assertEqual(X_in_col, 2)
-        self.assertEqual(Y_in_row, 1)
-        self.assertEqual(Y_in_col, 2)
+@pytest.mark.parametrize("arg", ["txt", "hoge.txt", ("hogecsv")])
+def test_value(hsic_obj: HSICLasso, arg: Literal["txt", "hoge.txt", "hogecsv"]):
+    with pytest.raises(FileNotFoundError) as exc_info:
+        hsic_obj._check_args([arg])
+        assert exc_info.type is FileNotFoundError
 
-        self.hsic_lasso._input_data_list(
+
+@pytest.mark.parametrize(
+    "arg",
+    [
+        (1, 2, 3),
+        (123),
+        ([1, 2, 3]),
+        (np.array([1, 2, 3])),
+        ("hoge", "hoge"),
+        ("hoge", [1, 2, 3]),
+        ([1, 2, 3], "hoge"),
+        ("hoge", np.array([1, 2, 3])),
+        (np.array([1, 2, 3]), "hoge"),
+        (123, [1, 2, 3]),
+        ([1, 2, 3], 123),
+        (123, np.array([1, 2, 3])),
+        (np.array([1, 2, 3]), 123),
+        ([1, 2, 3], np.array([1, 2, 3])),
+        (np.array([1, 2, 3]), [1, 2, 3]),
+    ],
+)
+def test_type(hsic_obj: HSICLasso, arg: list[int] | npt.ArrayLike | Literal[1, 123, "hoge"]):
+    with pytest.raises(TypeError) as exc_info:
+        hsic_obj._check_args([arg])
+        assert exc_info.type is TypeError
+
+
+@pytest.fixture(params=["csv_data.csv", "tsv_data.tsv", "matlab_data.mat"])
+def input_data(request: pytest.FixtureRequest):
+    return ir.files("tests").joinpath("test_data", request.param)
+
+
+def test_file_found(hsic_obj: HSICLasso, input_data: Traversable):
+    assert hsic_obj._check_args([input_data])
+
+
+def test_file_input(hsic_obj: HSICLasso, input_data: Traversable):
+    assert hsic_obj.input(input_data)
+
+
+@pytest.mark.parametrize("arg", [[np.array([1, 2, 3]), np.array([1, 2, 3])], [[1, 2, 3], [1, 2, 3]]])
+def test_proper_args(hsic_obj: HSICLasso, arg: list[npt.ArrayLike] | list[list[int]]):
+    assert hsic_obj._check_args(arg)
+
+
+@pytest.mark.parametrize(
+    "X_in,Y_in,expected_x_in_row,expected_x_in_col,expected_y_in_row,expected_y_in_col",
+    [
+        ([[1, 1, 1], [2, 2, 2]], [1, 2], 3, 2, 1, 2),
+        ([[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]], [1, 2, 3, 4], 5, 4, 1, 4),
+    ],
+)
+def test_input_data_list(
+    hsic_obj: HSICLasso,
+    X_in: list[list[int]],
+    Y_in: list[int],
+    expected_x_in_row: Literal[3, 5],
+    expected_x_in_col: Literal[2, 4],
+    expected_y_in_row: Literal[1],
+    expected_y_in_col: Literal[2, 4],
+):
+    hsic_obj._input_data_list(X_in, Y_in)
+    assert (expected_x_in_row, expected_x_in_col) == hsic_obj.X_in.shape
+    assert (expected_y_in_row, expected_y_in_col) == hsic_obj.Y_in.shape
+
+
+@pytest.mark.parametrize(
+    "X_in,Y_in",
+    [
+        (
             [[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]],
-            [1, 2, 3, 4],
-        )
-        X_in_row, X_in_col = self.hsic_lasso.X_in.shape
-        Y_in_row, Y_in_col = self.hsic_lasso.Y_in.shape
-        self.assertEqual(X_in_row, 5)
-        self.assertEqual(X_in_col, 4)
-        self.assertEqual(Y_in_row, 1)
-        self.assertEqual(Y_in_col, 4)
+            [[1, 2, 3, 4], [1, 2, 3, 4]],
+        ),
+    ],
+)
+def test_input_data_list_error(hsic_obj: HSICLasso, X_in: list[int], Y_in: list[int]):
+    with pytest.raises(ValueError) as exc_info:
+        hsic_obj._input_data_list(X_in, Y_in)
+        assert exc_info.type is ValueError
 
-        with self.assertRaises(ValueError):
-            self.hsic_lasso._input_data_list(
-                [[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]],
-                [[1, 2, 3, 4], [1, 2, 3, 4]],
-            )
 
-    def test_input_data_ndarray(self):
-        self.hsic_lasso._input_data_ndarray(
-            np.array([[1, 1, 1], [2, 2, 2]]), np.array([1, 2])
-        )
-        X_in_row, X_in_col = self.hsic_lasso.X_in.shape
-        Y_in_row, Y_in_col = self.hsic_lasso.Y_in.shape
-        self.assertEqual(X_in_row, 3)
-        self.assertEqual(X_in_col, 2)
-        self.assertEqual(Y_in_row, 1)
-        self.assertEqual(Y_in_col, 2)
-
-        self.hsic_lasso._input_data_ndarray(
-            np.array(
-                [[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]]
-            ),
+@pytest.mark.parametrize(
+    "X_in,Y_in,expected_x_in_row,expected_x_in_col,expected_y_in_row,expected_y_in_col",
+    [
+        (np.array([[1, 1, 1], [2, 2, 2]]), np.array([1, 2]), 3, 2, 1, 2),
+        (
+            np.array([[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]]),
             np.array([1, 2, 3, 4]),
-        )
-        X_in_row, X_in_col = self.hsic_lasso.X_in.shape
-        Y_in_row, Y_in_col = self.hsic_lasso.Y_in.shape
-        self.assertEqual(X_in_row, 5)
-        self.assertEqual(X_in_col, 4)
-        self.assertEqual(Y_in_row, 1)
-        self.assertEqual(Y_in_col, 4)
+            5,
+            4,
+            1,
+            4,
+        ),
+    ],
+)
+def test_input_data_ndarray(
+    hsic_obj: HSICLasso,
+    X_in: list[list[int]],
+    Y_in: list[int],
+    expected_x_in_row: int,
+    expected_x_in_col: int,
+    expected_y_in_row: int,
+    expected_y_in_col: int,
+):
+    hsic_obj._input_data_list(X_in, Y_in)
+    assert (expected_x_in_row, expected_x_in_col) == hsic_obj.X_in.shape
+    assert (expected_y_in_row, expected_y_in_col) == hsic_obj.Y_in.shape
 
-        with self.assertRaises(ValueError):
-            self.hsic_lasso._input_data_list(
-                np.array(
-                    [[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]]
-                ),
-                np.array([[1, 2, 3, 4], [1, 2, 3, 4]]),
-            )
 
-    def test_check_shape(self):
-        self.hsic_lasso._input_data_list([[1, 1, 1], [2, 2, 2]], [1, 2])
-        self.assertTrue(self.hsic_lasso._check_shape())
+@pytest.mark.parametrize(
+    "X_in,Y_in",
+    [
+        (
+            np.array([[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]]),
+            np.array([[1, 2, 3, 4], [1, 2, 3, 4]]),
+        ),
+    ],
+)
+def test_input_data_ndarray_error(hsic_obj: HSICLasso, X_in: list[int], Y_in: list[int]):
+    with pytest.raises(ValueError) as exc_info:
+        hsic_obj._input_data_list(X_in, Y_in)
+        assert exc_info.type is ValueError
 
-        self.hsic_lasso._input_data_list(
+
+@pytest.mark.parametrize(
+    "X_in,Y_in",
+    [
+        ([[1, 1, 1], [2, 2, 2]], [1, 2]),
+        (
             [[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]],
             [1, 2, 3, 4],
-        )
-        self.assertTrue(self.hsic_lasso._check_shape())
-
-        self.hsic_lasso._input_data_list(
-            [[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3], [4, 4, 4, 4]], [1, 2, 3, 4]
-        )
-        self.assertTrue(self.hsic_lasso._check_shape())
-
-        self.hsic_lasso._input_data_list(
-            [[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3]], [1, 2, 3, 4]
-        )
-        with self.assertRaises(ValueError):
-            self.hsic_lasso._check_shape()
-
-    def test_input(self):
-        self.assertTrue(self.hsic_lasso.input("./tests/test_data/csv_data.csv"))
-        self.assertTrue(self.hsic_lasso.input("./tests/test_data/tsv_data.tsv"))
-        self.assertTrue(self.hsic_lasso.input("./tests/test_data/matlab_data.mat"))
+        ),
+        ([[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3], [4, 4, 4, 4]], [1, 2, 3, 4]),
+    ],
+)
+def test_check_shape(hsic_obj: HSICLasso, X_in: list[int], Y_in: list[int]):
+    hsic_obj._input_data_list(X_in, Y_in)
+    assert hsic_obj._check_shape()
 
 
-if __name__ == "__main__":
-    unittest.main()
+@pytest.mark.parametrize(
+    "X_in,Y_in",
+    [
+        ([[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3]], [1, 2, 3, 4]),
+    ],
+)
+def test_check_shape(hsic_obj: HSICLasso, X_in: list[int], Y_in: list[int]):
+    hsic_obj._input_data_list(X_in, Y_in)
+    with pytest.raises(ValueError) as exc_info:
+        hsic_obj._check_shape()
+        assert exc_info.type is ValueError

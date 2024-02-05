@@ -4,12 +4,14 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.cluster.hierarchy import linkage
+from scipy.spatial import distance
+from icecream import ic
+
 from pyhsiclasso.hsic_lasso import compute_kernel, hsic_lasso
 from pyhsiclasso.input_data import input_file
 from pyhsiclasso.nlars import nlars
 from pyhsiclasso.plot_figure import plot_dendrogram, plot_heatmap, plot_path
-from scipy.cluster.hierarchy import linkage
-from scipy.spatial import distance
 
 
 class HSICLasso:
@@ -39,7 +41,7 @@ class HSICLasso:
             output_list = ["class"]
 
         self._check_args(args)
-        if isinstance(args[0], str):
+        if isinstance(args[0], str | Path):
             self._input_data_file(args[0], output_list)
         elif isinstance(args[0], np.ndarray):
             if "featname" in kwargs:
@@ -386,19 +388,26 @@ class HSICLasso:
     # ========================================
 
     def _check_args(self, args):
+        ic(args)
         if len(args) == 0 or len(args) >= 4:
-            msg = "Input as input_data(file_name) or                 input_data(X_in, Y_in)"
+            msg = "Input as input_file(file_name) or input_data(X_in, Y_in)"
             raise SyntaxError(msg)
         elif len(args) == 1:
-            if isinstance(args[0], str):
-                filename = Path(args[0])
-
-                if not filename.exists():
-                    msg = f"{filename} cannot be found. Check your file name"
-                    raise ValueError(msg)
-                if filename.suffix not in [".csv", ".tsv", ".mat"]:
+            if not isinstance(args[0], str | Path):
+                msg = "Invalid arguments. Input as input_file(file_name) or input_data(X_in, Y_in)"
+                raise TypeError(msg)
+            else:
+                filename = args[0] if isinstance(args[0], Path) else Path(args[0])
+                if filename.exists() and filename.suffix not in [".csv", ".tsv", ".mat"]:
                     msg = "pyhsiclasso can only read .csv, .tsv .mat input files"
                     raise TypeError(msg)
+                if filename.suffix not in [".csv", ".tsv", ".mat"]:
+                    msg = f"{filename} does not exist but if it did, pyhsiclasso "
+                    "can only read .csv, .tsv .mat input files"
+                    raise FileNotFoundError(msg)
+                if not filename.exists():
+                    msg = f"{filename} cannot be found. Check your file name"
+                    raise FileNotFoundError(msg)
         elif len(args) == 2:
             if isinstance(args[0], str):
                 msg = "Check arg type"
@@ -451,7 +460,7 @@ class HSICLasso:
     ):
         if output_list is None:
             output_list = ["class"]
-        X_in, Y_in, featname = input_df(df=df, output_list=output_list, featname=featname)
+        X_in, Y_in, featname = input_file(file_name=df, output_list=output_list, featname=featname)
         self.X_in = X_in
         self.Y_in = Y_in
         self.featname = featname

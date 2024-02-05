@@ -1,5 +1,4 @@
 #!/usr/bin.env python
-# coding: utf-8
 
 
 import unittest
@@ -29,9 +28,7 @@ class RegressionTest(unittest.TestCase):
 
         self.hsic_lasso.input("./tests/test_data/matlab_data.mat")
         self.hsic_lasso.regression(10, B=0, n_jobs=1)
-        self.assertEqual(
-            self.hsic_lasso.A, [1099, 99, 199, 1299, 1477, 1405, 1073, 299, 1596, 358]
-        )
+        self.assertEqual(self.hsic_lasso.A, [1099, 99, 199, 1299, 1477, 1405, 1073, 299, 1596, 358])
 
         # Blocks
         self.hsic_lasso.input("./tests/test_data/matlab_data.mat")
@@ -42,9 +39,7 @@ class RegressionTest(unittest.TestCase):
         self.hsic_lasso.input("./tests/test_data/matlab_data.mat")
         B = int(self.hsic_lasso.X_in.shape[1] / 2)
         self.hsic_lasso.regression(10, B, 10)
-        self.assertEqual(
-            self.hsic_lasso.A, [1099, 99, 199, 1477, 299, 1299, 1073, 1405, 358, 1596]
-        )
+        self.assertEqual(self.hsic_lasso.A, [1099, 99, 199, 1477, 299, 1299, 1073, 1405, 358, 1596])
 
         # use non-divisor as block size
         with warnings.catch_warnings(record=True) as w:
@@ -63,10 +58,8 @@ class RegressionTest(unittest.TestCase):
             self.assertEqual(w[-1].category, RuntimeWarning)
             self.assertEqual(
                 str(w[-1].message),
-                "B {} must be an exact divisor of the \
-number of samples {}. Number of blocks {} will be approximated to {}.".format(
-                    B, n, numblocks, int(numblocks)
-                ),
+                f"B {B} must be an exact divisor of the \
+number of samples {n}. Number of blocks {numblocks} will be approximated to {int(numblocks)}.",
             )
 
         # Covariates
