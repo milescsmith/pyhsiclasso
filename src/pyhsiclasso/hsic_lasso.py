@@ -38,7 +38,7 @@ def hsic_lasso(
     # Preparing design matrix for HSIC Lars
     result = Parallel(n_jobs=n_jobs)(
         [
-            delayed(parallel_compute_kernel)(np.reshape(X[k, :], (1, n)), x_kernel, k, B, M, n, discarded)
+            delayed(parallel_compute_kernel)(np.reshape(X[k, :], (1, n)), x_kernel, k, B, M, discarded)
             for k in range(d)
         ]
     )
@@ -101,7 +101,6 @@ def parallel_compute_kernel(
     feature_idx: int,
     B: int,
     M: int,
-    n: int,
     discarded: int,
 ):
     return (feature_idx, compute_kernel(x, kernel, B, M, discarded))

@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 from pathlib import Path
+
 import pandas as pd
 from scipy import io as spio
+from icecream import ic
 
 
 def input_csv_file(file_name, output_list: list[str] | None = None):
@@ -64,7 +66,7 @@ def input_df(df: pd.DataFrame, output_list: list[str] | None = None, featname: l
     else:
         msg = f"Output variable, {output_name}, not found"
         raise ValueError(msg)
-    print(f"X_in: {X_in.shape}, Y_in: {Y_in.shape}")
+    ic(f"X_in: {X_in.shape}, Y_in: {Y_in.shape}")
     return X_in, Y_in, featname
 
 
@@ -96,7 +98,7 @@ def input_matlab_file(file_name):
 
 def input_file(file_name: Path | str, **kwargs) -> tuple:
     file_name = Path(file_name) if isinstance(file_name, str) else file_name
-    print(f"file is {file_name} of type {type(file_name)}")
+    ic(f"file is {file_name} of type {type(file_name)}")
     match file_name.suffix:
         case ".csv":
             X_in, Y_in, featname = input_csv_file(file_name, **kwargs)

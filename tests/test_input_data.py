@@ -1,22 +1,18 @@
 #!/usr/bin.env python
-import importlib.resources as ir
-
 import pytest
 
 from pyhsiclasso import input_file
 
 
-@pytest.fixture(params=["csv_data.csv", "tsv_data.tsv", "matlab_data.mat"])
-def input_data(request):
-    return ir.files("tests").joinpath("test_data", request.param)
-
-
-@pytest.mark.parametrize("num_col", [62, 62, 100])
-def test_input(input_data, num_col):
-    X_in, Y_in, _ = input_file(input_data)
-    X_in_row, X_in_col = X_in.shape
-    Y_in_row, Y_in_col = Y_in.shape
-    assert X_in_row == 2000
-    assert X_in_col == 62
-    assert Y_in_row == 1
-    assert Y_in_col == 62
+@pytest.mark.parametrize(
+    "input_data,x_shape,y_shape",
+    [
+        ("csv_data.csv", (2000, 62), (1, 62)),
+        ("tsv_data.tsv", (2000, 62), (1, 62)),
+        ("matlab_data.mat", (2000, 100), (1, 100)),
+    ],
+)
+def test_input(load_input_data, input_data, x_shape, y_shape):
+    X_in, Y_in, _ = input_file(load_input_data(input_data))
+    assert x_shape == X_in.shape
+    assert y_shape == Y_in.shape

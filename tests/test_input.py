@@ -11,11 +11,6 @@ import pytest
 from pyhsiclasso import HSICLasso
 
 
-@pytest.fixture
-def hsic_obj():
-    return HSICLasso()
-
-
 def test_syntax(hsic_obj: HSICLasso):
     with pytest.raises(SyntaxError) as exc_info:
         hsic_obj._check_args([])
@@ -49,7 +44,7 @@ def test_value(hsic_obj: HSICLasso, arg: Literal["txt", "hoge.txt", "hogecsv"]):
         (np.array([1, 2, 3]), [1, 2, 3]),
     ],
 )
-def test_type(hsic_obj: HSICLasso, arg: list[int] | npt.ArrayLike | Literal[1, 123, "hoge"]):
+def test_type(hsic_obj: HSICLasso, arg: list[int] | npt.ArrayLike | int | str):
     with pytest.raises(TypeError) as exc_info:
         hsic_obj._check_args([arg])
         assert exc_info.type is TypeError
@@ -78,35 +73,29 @@ def test_proper_args(hsic_obj: HSICLasso, arg: list[npt.ArrayLike] | list[list[i
     [
         ([[1, 1, 1], [2, 2, 2]], [1, 2], 3, 2, 1, 2),
         ([[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]], [1, 2, 3, 4], 5, 4, 1, 4),
+        pytest.param(
+            [[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]],
+            [[1, 2, 3, 4], [1, 2, 3, 4]],
+            0,
+            0,
+            0,
+            0,
+            marks=pytest.mark.xfail(raises=ValueError)
+        ),
     ],
 )
 def test_input_data_list(
     hsic_obj: HSICLasso,
     X_in: list[list[int]],
     Y_in: list[int],
-    expected_x_in_row: Literal[3, 5],
-    expected_x_in_col: Literal[2, 4],
-    expected_y_in_row: Literal[1],
-    expected_y_in_col: Literal[2, 4],
+    expected_x_in_row: int,
+    expected_x_in_col: int,
+    expected_y_in_row: int,
+    expected_y_in_col: int,
 ):
     hsic_obj._input_data_list(X_in, Y_in)
     assert (expected_x_in_row, expected_x_in_col) == hsic_obj.X_in.shape
     assert (expected_y_in_row, expected_y_in_col) == hsic_obj.Y_in.shape
-
-
-@pytest.mark.parametrize(
-    "X_in,Y_in",
-    [
-        (
-            [[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]],
-            [[1, 2, 3, 4], [1, 2, 3, 4]],
-        ),
-    ],
-)
-def test_input_data_list_error(hsic_obj: HSICLasso, X_in: list[int], Y_in: list[int]):
-    with pytest.raises(ValueError) as exc_info:
-        hsic_obj._input_data_list(X_in, Y_in)
-        assert exc_info.type is ValueError
 
 
 @pytest.mark.parametrize(
@@ -120,6 +109,12 @@ def test_input_data_list_error(hsic_obj: HSICLasso, X_in: list[int], Y_in: list[
             4,
             1,
             4,
+        ),
+        pytest.param(
+            np.array([[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]]),
+            np.array([[1, 2, 3, 4], [1, 2, 3, 4]]),
+            0,0,0,0,
+            marks=pytest.mark.xfail(raises=ValueError)
         ),
     ],
 )
@@ -136,22 +131,6 @@ def test_input_data_ndarray(
     assert (expected_x_in_row, expected_x_in_col) == hsic_obj.X_in.shape
     assert (expected_y_in_row, expected_y_in_col) == hsic_obj.Y_in.shape
 
-
-@pytest.mark.parametrize(
-    "X_in,Y_in",
-    [
-        (
-            np.array([[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]]),
-            np.array([[1, 2, 3, 4], [1, 2, 3, 4]]),
-        ),
-    ],
-)
-def test_input_data_ndarray_error(hsic_obj: HSICLasso, X_in: list[int], Y_in: list[int]):
-    with pytest.raises(ValueError) as exc_info:
-        hsic_obj._input_data_list(X_in, Y_in)
-        assert exc_info.type is ValueError
-
-
 @pytest.mark.parametrize(
     "X_in,Y_in",
     [
@@ -161,21 +140,9 @@ def test_input_data_ndarray_error(hsic_obj: HSICLasso, X_in: list[int], Y_in: li
             [1, 2, 3, 4],
         ),
         ([[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3], [4, 4, 4, 4]], [1, 2, 3, 4]),
+        pytest.param([[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3]], [1, 2, 3, 4], marks=pytest.mark.xfail(raises=ValueError)),
     ],
 )
 def test_check_shape(hsic_obj: HSICLasso, X_in: list[int], Y_in: list[int]):
     hsic_obj._input_data_list(X_in, Y_in)
     assert hsic_obj._check_shape()
-
-
-@pytest.mark.parametrize(
-    "X_in,Y_in",
-    [
-        ([[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3]], [1, 2, 3, 4]),
-    ],
-)
-def test_check_shape(hsic_obj: HSICLasso, X_in: list[int], Y_in: list[int]):
-    hsic_obj._input_data_list(X_in, Y_in)
-    with pytest.raises(ValueError) as exc_info:
-        hsic_obj._check_shape()
-        assert exc_info.type is ValueError

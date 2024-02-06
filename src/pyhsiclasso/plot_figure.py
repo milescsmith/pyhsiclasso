@@ -35,7 +35,7 @@ def plot_dendrogram(linkage, featname, filepath):
     plt.clf()
 
 
-def plot_path(path, beta, A, filepath):
+def plot_path(path, A, filepath):
     t = path.sum(0)
     plt.title("HSICLasso Result")
     plt.xlabel("lambda")

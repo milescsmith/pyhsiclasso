@@ -3,6 +3,7 @@ import warnings
 from pathlib import Path
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial import distance
@@ -79,9 +80,11 @@ class HSICLasso:
         discrete_x: bool = False,
         max_neighbors: int = 10,
         n_jobs: int = -1,
-        covars: np.array = np.array([]),
+        covars: npt.ArrayLike | None = None,
         covars_kernel: str = "Gaussian",
     ) -> bool:
+        covars = np.array([]) if covars is None else covars
+
         self._run_hsic_lasso(
             num_feat=num_feat,
             y_kernel="Gaussian",
@@ -104,9 +107,11 @@ class HSICLasso:
         discrete_x: bool = False,
         max_neighbors: int = 10,
         n_jobs: int = -1,
-        covars: np.ndarray = np.array([]),
+        covars: npt.ArrayLike | None = None,
         covars_kernel: str = "Gaussian",
     ) -> bool:
+
+        covars = np.array([]) if covars is None else covars
         self._run_hsic_lasso(
             num_feat=num_feat,
             y_kernel="Delta",
@@ -130,7 +135,7 @@ class HSICLasso:
         discrete_x: bool,
         max_neighbors: int,
         n_jobs: int,
-        covars: np.ndarray,
+        covars: npt.ArrayLike,
         covars_kernel: str,
     ) -> bool:
         if self.X_in is None or self.Y_in is None:
@@ -142,8 +147,8 @@ class HSICLasso:
         x_kernel = "Delta" if discrete_x else "Gaussian"
         numblocks = n / B
         discarded = n % B
+        ic(f"Block HSIC Lasso B = {B}.")
 
-        print(f"Block HSIC Lasso B = {B}.")
 
         if discarded:
             msg = (
@@ -155,9 +160,9 @@ class HSICLasso:
 
         # Number of permutations of the block HSIC
         M = 1 + bool(numblocks - 1) * (M - 1)
-        print(f"M set to {M}.")
+        ic(f"M set to {M}.")
         additional_text = " and Gaussian kernel for the covariates" if covars.size else ""
-        print(f"Using {x_kernel} kernel for the features, {y_kernel}kernel for the outcomes{additional_text}.")
+        ic(f"Using {x_kernel} kernel for the features, {y_kernel}kernel for the outcomes{additional_text}.")
 
         X, Xty, Ky = hsic_lasso(
             self.X_in,
@@ -176,7 +181,8 @@ class HSICLasso:
 
         if covars.size:
             if self.X_in.shape[1] != covars.shape[0]:
-                raise UnboundLocalError(f"The number of rows in the covars matrix should be {self.X_in.shape[1]!s}")
+                msg = f"The number of rows in the covars matrix should be {self.X_in.shape[1]!s}"
+                raise UnboundLocalError(msg)
 
             if covars_kernel == "Gaussian":
                 Kc = compute_kernel(covars.transpose(), "Gaussian", B, M, discarded)
@@ -188,7 +194,7 @@ class HSICLasso:
             Kc = Kc * np.sqrt(1 / (numblocks * M))
 
             betas = np.dot(Ky.transpose(), Kc) / np.trace(np.dot(Kc.T, Kc))
-            # print(betas)
+            # ic(betas)
             self.Xty = self.Xty - betas * np.dot(self.X.transpose(), Kc)
 
         (
@@ -235,7 +241,7 @@ class HSICLasso:
             ofs = f"| {i + 1:<5} | {self.featname[self.A[i]]:<12} | {self.beta[self.A[i]][0] / maxval:.3f} |"
             rf = [
                 f" {self.featname[nn]:<12} ({ns:.3f})"
-                for nn, ns, _ in zip(self.A_neighbors[i][1:], self.A_neighbors_score[i][1:], range(5))
+                for nn, ns, _ in zip(self.A_neighbors[i][1:], self.A_neighbors_score[i][1:], range(5), strict=False)
             ]
             row = ofs + ",".join(rf)
             results.append(row + " " * max(0, len(results[1]) - len(row)) + "|")
@@ -243,12 +249,11 @@ class HSICLasso:
         results[1] = results[1] + " " * max(0, len(row) - len(results[1])) + "|"
         deco = "=" * ((len(results[1]) - len(results[0])) // 2)
         results[0] = deco + results[0] + deco
+        ic("\n".join(results))
 
-        print("\n".join(results))
-
-        # print("===== HSICLasso : Path ======")
+        # ic("===== HSICLasso : Path ======")
         # for i in range(len(self.A)):
-        #    print(self.path[self.A[i], 1:])
+        #    ic(self.path[self.A[i], 1:])
         # return True
 
     def plot_heatmap(self, filepath="heatmap.png"):
@@ -274,7 +279,7 @@ class HSICLasso:
         if self.path is None or self.beta is None or self.A is None:
             msg = "Input your data"
             raise UnboundLocalError(msg)
-        plot_path(self.path, self.beta, self.A, filepath)
+        plot_path(self.path, self.A, filepath)
         return True
 
     def get_features(self):
@@ -388,7 +393,6 @@ class HSICLasso:
     # ========================================
 
     def _check_args(self, args):
-        ic(args)
         if len(args) == 0 or len(args) >= 4:
             msg = "Input as input_file(file_name) or input_data(X_in, Y_in)"
             raise SyntaxError(msg)
