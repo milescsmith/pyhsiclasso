@@ -2,9 +2,10 @@
 
 from pathlib import Path
 
+import numpy.typing as npt
 import pandas as pd
+from rich import print as pp
 from scipy import io as spio
-from icecream import ic
 
 
 def input_csv_file(file_name, output_list: list[str] | None = None):
@@ -19,7 +20,7 @@ def input_tsv_file(file_name, output_list=None):
     return input_txt_file(file_name, output_list, "\t")
 
 
-def input_txt_file(file_name: str, output_list: list[str], sep: str):
+def input_txt_file(file_name: str, output_list: list[str], sep: str) -> tuple[npt.ArrayLike, npt.ArrayLike, str]:
     df = pd.read_csv(file_name, sep=sep)
 
     # Store the column name (Feature name)
@@ -66,7 +67,7 @@ def input_df(df: pd.DataFrame, output_list: list[str] | None = None, featname: l
     else:
         msg = f"Output variable, {output_name}, not found"
         raise ValueError(msg)
-    ic(f"X_in: {X_in.shape}, Y_in: {Y_in.shape}")
+    pp(f"X_in: {X_in.shape}, Y_in: {Y_in.shape}")
     return X_in, Y_in, featname
 
 
@@ -98,7 +99,7 @@ def input_matlab_file(file_name):
 
 def input_file(file_name: Path | str, **kwargs) -> tuple:
     file_name = Path(file_name) if isinstance(file_name, str) else file_name
-    ic(f"file is {file_name} of type {type(file_name)}")
+    pp(f"file is {file_name} of type {type(file_name)}")
     match file_name.suffix:
         case ".csv":
             X_in, Y_in, featname = input_csv_file(file_name, **kwargs)

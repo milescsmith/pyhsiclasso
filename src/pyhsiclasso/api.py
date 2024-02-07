@@ -5,14 +5,15 @@ from pathlib import Path
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from loguru import logger
+from rich import print as pp
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial import distance
-from icecream import ic
 
-from pyhsiclasso.hsic_lasso import compute_kernel, hsic_lasso
-from pyhsiclasso.input_data import input_file
-from pyhsiclasso.nlars import nlars
-from pyhsiclasso.plot_figure import plot_dendrogram, plot_heatmap, plot_path
+from .hsic_lasso import compute_kernel, hsic_lasso
+from .input_data import input_file
+from .nlars import nlars
+from .plot_figure import plot_dendrogram, plot_heatmap, plot_path
 
 
 class HSICLasso:
@@ -34,37 +35,21 @@ class HSICLasso:
         self.hclust_featnameindex = None
         self.max_neighbors = 10
 
-    def input(self, *args, **kwargs):
-        if "output_list" in kwargs:
-            output_list = kwargs["output_list"]
-            del kwargs["output_list"]
-        else:
-            output_list = ["class"]
-
-        self._check_args(args)
-        if isinstance(args[0], str | Path):
-            self._input_data_file(args[0], output_list)
-        elif isinstance(args[0], np.ndarray):
-            if "featname" in kwargs:
-                featname = kwargs["featname"]
-                del kwargs["featname"]
-            else:
-                featname = [f"{int(x)}" for x in range(1, args[0].shape[1] + 1)]
-
-            if len(args) == 2:
-                self._input_data_ndarray(args[0], args[1], featname)
-            if len(args) == 3:
-                self._input_data_ndarray(args[0], args[1], args[2])
-        elif isinstance(args[0], pd.DataFrame):
-            df = args[0]
-            if "featname" in kwargs:
-                featname = kwargs["featname"]
-                del kwargs["featname"]
-            else:
-                featname = df.columns.drop(output_list)
-            self._input_data_dataframe(
-                df,
-            )
+    def input(
+        self,
+        *,
+        input_data: str | Path | npt.ArrayLike | pd.DataFrame | None = None,
+        output_list: str | list[str] | npt.ArrayLike | pd.Series = "class",
+        featname: list[str] | npt.ArrayLike | pd.Series | None = None,
+    ):
+        # self._check_args(args)
+        match input_data:
+            case str() | Path():
+                self._input_data_file(input_data, output_list)
+            case np.ndarray():
+                self._input_data_ndarray(X_in=input_data, Y_in=output_list, featname=featname)
+            case pd.DataFrame():
+                self._input_data_dataframe(df=input_data, output_list=output_list, featname=featname)
 
         if self.X_in is None or self.Y_in is None:
             msg = "Check your input data"
@@ -147,8 +132,7 @@ class HSICLasso:
         x_kernel = "Delta" if discrete_x else "Gaussian"
         numblocks = n / B
         discarded = n % B
-        ic(f"Block HSIC Lasso B = {B}.")
-
+        pp(f"Block HSIC Lasso B = {B}.")
 
         if discarded:
             msg = (
@@ -160,9 +144,9 @@ class HSICLasso:
 
         # Number of permutations of the block HSIC
         M = 1 + bool(numblocks - 1) * (M - 1)
-        ic(f"M set to {M}.")
+        pp(f"M set to {M}.")
         additional_text = " and Gaussian kernel for the covariates" if covars.size else ""
-        ic(f"Using {x_kernel} kernel for the features, {y_kernel}kernel for the outcomes{additional_text}.")
+        pp(f"Using {x_kernel} kernel for the features, {y_kernel}kernel for the outcomes{additional_text}.")
 
         X, Xty, Ky = hsic_lasso(
             self.X_in,
@@ -194,7 +178,7 @@ class HSICLasso:
             Kc = Kc * np.sqrt(1 / (numblocks * M))
 
             betas = np.dot(Ky.transpose(), Kc) / np.trace(np.dot(Kc.T, Kc))
-            # ic(betas)
+            # pp(betas)
             self.Xty = self.Xty - betas * np.dot(self.X.transpose(), Kc)
 
         (
@@ -249,11 +233,11 @@ class HSICLasso:
         results[1] = results[1] + " " * max(0, len(row) - len(results[1])) + "|"
         deco = "=" * ((len(results[1]) - len(results[0])) // 2)
         results[0] = deco + results[0] + deco
-        ic("\n".join(results))
+        print("\n".join(results))
 
-        # ic("===== HSICLasso : Path ======")
+        # pp("===== HSICLasso : Path ======")
         # for i in range(len(self.A)):
-        #    ic(self.path[self.A[i], 1:])
+        #    pp(self.path[self.A[i], 1:])
         # return True
 
     def plot_heatmap(self, filepath="heatmap.png"):
@@ -390,17 +374,15 @@ class HSICLasso:
                 sstr = f"{','.join(tmp)}\n"
                 fout.write(sstr)
 
-    # ========================================
-
     def _check_args(self, args):
         if len(args) == 0 or len(args) >= 4:
             msg = "Input as input_file(file_name) or input_data(X_in, Y_in)"
             raise SyntaxError(msg)
         elif len(args) == 1:
-            if not isinstance(args[0], str | Path):
+            if not isinstance(args[0], str | Path | np.ndarray | pd.DataFrame):
                 msg = "Invalid arguments. Input as input_file(file_name) or input_data(X_in, Y_in)"
                 raise TypeError(msg)
-            else:
+            elif isinstance(args[0], str | Path):
                 filename = args[0] if isinstance(args[0], Path) else Path(args[0])
                 if filename.exists() and filename.suffix not in [".csv", ".tsv", ".mat"]:
                     msg = "pyhsiclasso can only read .csv, .tsv .mat input files"
@@ -420,8 +402,8 @@ class HSICLasso:
                 if not isinstance(args[1], list):
                     msg = "Check arg type"
                     raise TypeError(msg)
-            elif isinstance(args[0], np.ndarray):
-                if not isinstance(args[1], np.ndarray):
+            elif isinstance(args[0], np.ndarray | pd.DataFrame):
+                if not isinstance(args[1], np.ndarray | pd.Series):
                     msg = "Check arg type"
                     raise TypeError(msg)
             else:
@@ -450,7 +432,7 @@ class HSICLasso:
         self.Y_in = np.array(Y_in).reshape(1, len(Y_in))
         return True
 
-    def _input_data_ndarray(self, X_in, Y_in, featname=None):
+    def _input_data_ndarray(self, X_in: npt.ArrayLike, Y_in, featname=None):
         if len(Y_in.shape) == 2:
             msg = "Check your input data"
             raise ValueError(msg)
@@ -460,13 +442,42 @@ class HSICLasso:
         return True
 
     def _input_data_dataframe(
-        self, df: pd.DataFrame, output_list: list[str] | None = None, featname: list[str] | None = None
+        self,
+        df: pd.DataFrame,
+        output_list: pd.Series | npt.ArrayLike | list[str] | str = "class",
+        featname: list[str] | npt.ArrayLike | pd.Series | None = None,
     ):
-        if output_list is None:
-            output_list = ["class"]
-        X_in, Y_in, featname = input_file(file_name=df, output_list=output_list, featname=featname)
-        self.X_in = X_in
-        self.Y_in = Y_in
+        match output_list:
+            case str():
+                if output_list in df.columns:
+                    Y_in = df.loc[:, output_list].to_numpy()
+                else:
+                    logger.exception(f"{output_list} was not found as a column in the passed dataframe")
+            case list() | pd.Series() | np.ndarray():
+                if len(output_list) != df.shape[0]:
+                    logger.exception(
+                        f"The output_list does not contain an entry for every row of the dataframe. {output_list} has {len(output_list)} items while the dataframe has {df.shape[0]}"
+                    )
+                else:
+                    Y_in = np.array(output_list)
+            case _:
+                logger.exception(f"output_list is of type {type(output_list)} and I don't know what to do with that.")
+
+        if featname is not None:
+            missing_features = featname[~featname.isin(df.columns)]
+            if any(missing_features):
+                logger.warning(f"{', '.join(missing_features) } were not found in the data")
+            featname = df.columns.intersection(featname).to_list()
+            X_in = df.loc[:, featname].to_numpy()
+        else:
+            featname = [str(x) for x in range(1, df.shape[1] + 1)]
+
+        if any(pd.isnull(Y_in)):
+            msg = "Found null values in output_list. Remove or fix these and try again."
+            raise ValueError(msg)
+
+        self.X_in = X_in.T
+        self.Y_in = Y_in.reshape(1, len(Y_in))
         self.featname = featname
         return True
 
