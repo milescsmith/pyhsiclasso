@@ -5,7 +5,7 @@ from typing import Literal
 import numpy as np
 from joblib import Parallel, delayed
 
-from pyhsiclasso.kernel_tools import kernel_delta_norm, kernel_gaussian
+from .kernel_tools import kernel_delta_norm, kernel_gaussian
 
 
 def hsic_lasso(
@@ -37,10 +37,7 @@ def hsic_lasso(
 
     # Preparing design matrix for HSIC Lars
     result = Parallel(n_jobs=n_jobs)(
-        [
-            delayed(parallel_compute_kernel)(np.reshape(X[k, :], (1, n)), x_kernel, k, B, M, discarded)
-            for k in range(d)
-        ]
+        [delayed(parallel_compute_kernel)(np.reshape(X[k, :], (1, n)), x_kernel, k, B, M, discarded) for k in range(d)]
     )
 
     # non-parallel version for debugging purposes
