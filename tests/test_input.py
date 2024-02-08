@@ -6,6 +6,7 @@ from typing import Literal
 
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import pytest
 
 from pyhsiclasso import HSICLasso
@@ -25,38 +26,41 @@ def test_value(hsic_obj: HSICLasso, arg: Literal["txt", "hoge.txt", "hogecsv"]):
 
 
 @pytest.mark.parametrize(
-    "arg",
+    "input_data,output,featname",
     [
-        (1, 2, 3),
-        (123),
-        ([1, 2, 3]),
-        (np.array([1, 2, 3])),
-        ("hoge", "hoge"),
-        ("hoge", [1, 2, 3]),
-        ([1, 2, 3], "hoge"),
-        ("hoge", np.array([1, 2, 3])),
-        (np.array([1, 2, 3]), "hoge"),
-        (123, [1, 2, 3]),
-        ([1, 2, 3], 123),
-        (123, np.array([1, 2, 3])),
-        (np.array([1, 2, 3]), 123),
-        ([1, 2, 3], np.array([1, 2, 3])),
-        (np.array([1, 2, 3]), [1, 2, 3]),
+        pytest.param(1, 2, 3, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param([1, 2, 3], None, None, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param(123, None, None, marks=pytest.mark.xfail(raises=TypeError)),
+        pytest.param("hoge", None, None, marks=pytest.mark.xfail(raises=FileNotFoundError)),
+        pytest.param(np.array([1, 2, 3]), None, None, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(
+            pd.DataFrame(np.random.randint(0, 100, size=(100, 4)), columns=list("ABCD")),
+            2,
+            3,
+            marks=pytest.mark.xfail(raises=TypeError),
+        ),
+        pytest.param(
+            pd.DataFrame(np.random.randint(0, 100, size=(100, 4)), columns=list("ABCD")),
+            "E",
+            3,
+            marks=pytest.mark.xfail(raises=KeyError),
+        ),
     ],
 )
-def test_type(hsic_obj: HSICLasso, arg: list[int] | npt.ArrayLike | int | str):
-    with pytest.raises(TypeError) as exc_info:
-        hsic_obj._check_args([arg])
-        assert exc_info.type is TypeError
+def test_bad_input(
+    hsic_obj: HSICLasso,
+    input_data: list[int] | npt.ArrayLike | int | str,
+    output: list[int] | npt.ArrayLike | int | str,
+    featname: list[int] | npt.ArrayLike | int | str,
+):
+    # if input_data is None:
+    #     input_data =
+    hsic_obj.input(input_data, output, featname)
 
 
 @pytest.fixture(params=["csv_data.csv", "tsv_data.tsv", "matlab_data.mat"])
 def input_data(request: pytest.FixtureRequest):
     return ir.files("tests").joinpath("test_data", request.param)
-
-
-def test_file_found(hsic_obj: HSICLasso, input_data: Traversable):
-    assert hsic_obj._check_args([input_data])
 
 
 def test_file_input(hsic_obj: HSICLasso, input_data: Traversable):
@@ -80,7 +84,7 @@ def test_proper_args(hsic_obj: HSICLasso, arg: list[npt.ArrayLike] | list[list[i
             0,
             0,
             0,
-            marks=pytest.mark.xfail(raises=ValueError)
+            marks=pytest.mark.xfail(raises=ValueError),
         ),
     ],
 )
@@ -113,8 +117,11 @@ def test_input_data_list(
         pytest.param(
             np.array([[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3], [4, 4, 4, 4, 4]]),
             np.array([[1, 2, 3, 4], [1, 2, 3, 4]]),
-            0,0,0,0,
-            marks=pytest.mark.xfail(raises=ValueError)
+            0,
+            0,
+            0,
+            0,
+            marks=pytest.mark.xfail(raises=ValueError),
         ),
     ],
 )
@@ -131,6 +138,7 @@ def test_input_data_ndarray(
     assert (expected_x_in_row, expected_x_in_col) == hsic_obj.X_in.shape
     assert (expected_y_in_row, expected_y_in_col) == hsic_obj.Y_in.shape
 
+
 @pytest.mark.parametrize(
     "X_in,Y_in",
     [
@@ -140,7 +148,11 @@ def test_input_data_ndarray(
             [1, 2, 3, 4],
         ),
         ([[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3], [4, 4, 4, 4]], [1, 2, 3, 4]),
-        pytest.param([[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3]], [1, 2, 3, 4], marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(
+            [[1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3]],
+            [1, 2, 3, 4],
+            marks=pytest.mark.xfail(raises=ValueError),
+        ),
     ],
 )
 def test_check_shape(hsic_obj: HSICLasso, X_in: list[int], Y_in: list[int]):

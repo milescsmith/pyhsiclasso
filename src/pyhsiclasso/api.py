@@ -10,10 +10,10 @@ from rich import print as pp
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial import distance
 
-from .hsic_lasso import compute_kernel, hsic_lasso
-from .input_data import input_file
-from .nlars import nlars
-from .plot_figure import plot_dendrogram, plot_heatmap, plot_path
+from pyhsiclasso.hsic_lasso import compute_kernel, hsic_lasso
+from pyhsiclasso.input_data import input_file
+from pyhsiclasso.nlars import nlars
+from pyhsiclasso.plot_figure import plot_dendrogram, plot_heatmap, plot_path
 
 
 class HSICLasso:
@@ -37,19 +37,34 @@ class HSICLasso:
 
     def input(
         self,
-        *,
         input_data: str | Path | npt.ArrayLike | pd.DataFrame | None = None,
-        output_list: str | list[str] | npt.ArrayLike | pd.Series = "class",
+        output: str | list[str] | npt.ArrayLike | pd.Series = "class",
         featname: list[str] | npt.ArrayLike | pd.Series | None = None,
     ):
         # self._check_args(args)
         match input_data:
             case str() | Path():
-                self._input_data_file(input_data, output_list)
+                self._input_data_file(input_data, output)
+            case np.ndarray() if not isinstance(output, list | np.ndarray | pd.Series):
+                msg = (
+                    "output is an invalid type. When input_list is a numpy array, "
+                    "output must be a list, array, or Series with a length equal to the "
+                    "number or rows in input_data"
+                )
+                raise ValueError(msg)
+            case np.ndarray() if isinstance(output, list):
+                self._input_data_ndarray(X_in=input_data, Y_in=np.array(output), featname=featname)
             case np.ndarray():
-                self._input_data_ndarray(X_in=input_data, Y_in=output_list, featname=featname)
+                self._input_data_ndarray(X_in=input_data, Y_in=output, featname=featname)
             case pd.DataFrame():
-                self._input_data_dataframe(df=input_data, output_list=output_list, featname=featname)
+                self._input_data_dataframe(df=input_data, output=output, featname=featname)
+            case _:
+                input_data_type = str(type(input_data)).lstrip("<class ").rstrip(">").replace("'", "")
+                msg = (
+                    f"{input_data} is a {input_data_type}, "
+                    f"input only knows how to deal with a str, Path, numpy array, or pandas dataframe"
+                )
+                raise TypeError(msg)
 
         if self.X_in is None or self.Y_in is None:
             msg = "Check your input data"
@@ -233,7 +248,7 @@ class HSICLasso:
         results[1] = results[1] + " " * max(0, len(row) - len(results[1])) + "|"
         deco = "=" * ((len(results[1]) - len(results[0])) // 2)
         results[0] = deco + results[0] + deco
-        print("\n".join(results))
+        pp("\n".join(results))
 
         # pp("===== HSICLasso : Path ======")
         # for i in range(len(self.A)):
@@ -324,11 +339,8 @@ class HSICLasso:
 
                 if self.featname[self.A[i]] not in featscore:
                     featscore[self.featname[self.A[i]]] = HSIC_XY
-
                     corrcoeff = np.corrcoef(self.X_in[self.A[i]], self.Y_in)[0][1]
-
                     featcorrcoeff[self.featname[self.A[i]]] = corrcoeff
-
                 else:
                     featscore[self.featname[self.A[i]]] += HSIC_XY
 
@@ -336,9 +348,7 @@ class HSICLasso:
                     HSIC_XX = self.A_neighbors_score[i][j]
                     if self.featname[self.A_neighbors[i][j]] not in featscore:
                         featscore[self.featname[self.A_neighbors[i][j]]] = HSIC_XY * HSIC_XX
-
                         corrcoeff = np.corrcoef(self.X_in[self.A_neighbors[i][j]], self.Y_in)[0][1]
-
                         featcorrcoeff[self.featname[self.A_neighbors[i][j]]] = corrcoeff
                     else:
                         featscore[self.featname[self.A_neighbors[i][j]]] += HSIC_XY * HSIC_XX
@@ -420,8 +430,8 @@ class HSICLasso:
 
         return True
 
-    def _input_data_file(self, file_name, output_list) -> bool:
-        self.X_in, self.Y_in, self.featname = input_file(file_name, output_list=output_list)
+    def _input_data_file(self, file_name: str | Path, output: str | list[str]) -> bool:
+        self.X_in, self.Y_in, self.featname = input_file(file_name, output=output)
         return True
 
     def _input_data_list(self, X_in, Y_in):
@@ -432,36 +442,42 @@ class HSICLasso:
         self.Y_in = np.array(Y_in).reshape(1, len(Y_in))
         return True
 
-    def _input_data_ndarray(self, X_in: npt.ArrayLike, Y_in, featname=None):
-        if len(Y_in.shape) == 2:
-            msg = "Check your input data"
+    def _input_data_ndarray(self, X_in: npt.ArrayLike, Y_in: npt.ArrayLike, featname=None):
+        if Y_in.ndim == 1 and len(Y_in) > X_in.shape[0]:
+            msg = "If Y_in is one-dimensional, it should be of equal length to the number of rows in X_in."
             raise ValueError(msg)
-        self.X_in = X_in.T
-        self.Y_in = Y_in.reshape(1, len(Y_in))
-        self.featname = featname
-        return True
+        elif Y_in.ndim > 1:
+            if Y_in.shape[0] != X_in.shape[0]:
+                msg = "If Y_in is multi-dimensional, it should have the same number of rows as X_in."
+                raise ValueError(msg)
+        if X_in.ndim != 2:
+            msg = "X_in should be a two-dimensional, sample-by-feature array."
+            raise ValueError(msg)
+        return self._set_obj_data(X_in, Y_in, featname)
 
     def _input_data_dataframe(
         self,
         df: pd.DataFrame,
-        output_list: pd.Series | npt.ArrayLike | list[str] | str = "class",
+        output: pd.Series | npt.ArrayLike | list[str] | str = "class",
         featname: list[str] | npt.ArrayLike | pd.Series | None = None,
     ):
-        match output_list:
+        match output:
             case str():
-                if output_list in df.columns:
-                    Y_in = df.loc[:, output_list].to_numpy()
+                if output in df.columns:
+                    Y_in = df.loc[:, output].to_numpy()
                 else:
-                    logger.exception(f"{output_list} was not found as a column in the passed dataframe")
+                    msg = f"{output} was not found as a column in the passed dataframe"
+                    raise KeyError(msg)
             case list() | pd.Series() | np.ndarray():
-                if len(output_list) != df.shape[0]:
+                if len(output) != df.shape[0]:
                     logger.exception(
-                        f"The output_list does not contain an entry for every row of the dataframe. {output_list} has {len(output_list)} items while the dataframe has {df.shape[0]}"
+                        f"The output does not contain an entry for every row of the dataframe. {output} has {len(output)} items while the dataframe has {df.shape[0]}"
                     )
                 else:
-                    Y_in = np.array(output_list)
+                    Y_in = np.array(output)
             case _:
-                logger.exception(f"output_list is of type {type(output_list)} and I don't know what to do with that.")
+                msg = f"output is of type {type(output)} and I don't know what to do with that."
+                raise TypeError(msg)
 
         if featname is not None:
             missing_features = featname[~featname.isin(df.columns)]
@@ -471,18 +487,24 @@ class HSICLasso:
             X_in = df.loc[:, featname].to_numpy()
         else:
             featname = [str(x) for x in range(1, df.shape[1] + 1)]
+            X_in = df.drop(columns=output)
 
         if any(pd.isnull(Y_in)):
-            msg = "Found null values in output_list. Remove or fix these and try again."
+            msg = "Found null values in output. Remove or fix these and try again."
             raise ValueError(msg)
 
+        return self._set_obj_data(X_in, Y_in, featname)
+
+    # TODO Rename this here and in `_input_data_ndarray` and `_input_data_dataframe`
+    def _set_obj_data(self, X_in, Y_in, featname):
         self.X_in = X_in.T
         self.Y_in = Y_in.reshape(1, len(Y_in))
         self.featname = featname
-        return True
 
     def _check_shape(self):
+        logger.error(self.X_in.shape)
         _, x_col_len = self.X_in.shape
+        logger.error(self.Y_in.shape)
         y_row_len, y_col_len = self.Y_in.shape
         # if y_row_len != 1:
         #    raise ValueError("Check your input data")

@@ -4,74 +4,46 @@ from pathlib import Path
 
 import numpy.typing as npt
 import pandas as pd
-from rich import print as pp
+from loguru import logger
 from scipy import io as spio
 
 
-def input_csv_file(file_name, output_list: list[str] | None = None):
-    if output_list is None:
-        output_list = ["class"]
-    return input_txt_file(file_name, output_list, ",")
-
-
-def input_tsv_file(file_name, output_list=None):
-    if output_list is None:
-        output_list = ["class"]
-    return input_txt_file(file_name, output_list, "\t")
-
-
-def input_txt_file(file_name: str, output_list: list[str], sep: str) -> tuple[npt.ArrayLike, npt.ArrayLike, str]:
+def input_txt_file(
+    file_name: str, output: str | list[str], sep: str | None = None, featname: list[str] | None = None
+) -> tuple[npt.ArrayLike, npt.ArrayLike, list[str]]:
     df = pd.read_csv(file_name, sep=sep)
 
-    # Store the column name (Feature name)
-    featname = df.columns.tolist()
-    input_index = list(range(len(featname)))
-    output_index = []
+    return input_df(df=df, output=output, featname=featname)
 
-    for output_name in output_list:
-        if output_name not in featname:
-            msg = f"Output variable, {output_name}, not found"
+
+def input_df(
+    df: pd.DataFrame, output: str | list[str] | None = None, featname: list[str] | None = None
+) -> tuple[npt.ArrayLike, npt.ArrayLike, list[str]]:
+    match output:
+        case str():
+            output = [output]
+        case None:
+            output = ["class"]
+        case _:
+            msg = "Dude, come on..."
             raise ValueError(msg)
-
-        tmp = featname.index(output_name)
-        output_index.append(tmp)
-        input_index.remove(tmp)
-    for output_name in output_list:
-        featname.remove(output_name)
-
-    X_in = df.iloc[:, input_index].values.T
-
-    if len(output_index) == 1:
-        Y_in = df.iloc[:, output_index].values.reshape(1, len(df.index))
-    else:
-        Y_in = df.iloc[:, output_index].values.T
-
-    return X_in, Y_in, featname
-
-
-def input_df(df: pd.DataFrame, output_list: list[str] | None = None, featname: list[str] | None = None):
-    if output_list is None:
-        output_list = ["class"]
-    # Store the column name (Feature name)
-    if featname is None:
-        featname = list(df.columns.drop(output_list))
-
-    output_name = [_ for _ in output_list if _ in df.columns]
+    featname = df.drop(columns=output).columns.intersection(df.columns).to_list() if featname is None else featname
 
     X_in = df.loc[:, featname].values.T
 
-    if len(output_name) == 1:
-        Y_in = df.loc[:, output_name].values.reshape(1, len(df.index))
-    elif len(output_name) > 1:
-        Y_in = df.loc[:, output_name].values.T
-    else:
-        msg = f"Output variable, {output_name}, not found"
-        raise ValueError(msg)
-    pp(f"X_in: {X_in.shape}, Y_in: {Y_in.shape}")
+    try:
+        if len(output) == 1:
+            Y_in = df.loc[:, output].values.reshape(1, len(df.index))
+        else:
+            Y_in = df.loc[:, output].values.T
+    except KeyError as e:
+        logger.exception(f"{e=}: {output} was not found as a column name")
+        raise
+
     return X_in, Y_in, featname
 
 
-def input_matlab_file(file_name):
+def input_matlab_file(file_name) -> tuple[npt.ArrayLike, npt.ArrayLike, list[str]]:
     data = spio.loadmat(file_name)
 
     if "X" in data.keys() and "Y" in data.keys():
@@ -97,14 +69,19 @@ def input_matlab_file(file_name):
     return X_in, Y_in, featname
 
 
-def input_file(file_name: Path | str, **kwargs) -> tuple:
+def input_file(
+    file_name: Path | str, output: str | list[str] = "class", **kwargs
+) -> tuple[npt.ArrayLike, npt.ArrayLike, list[str]]:
     file_name = Path(file_name) if isinstance(file_name, str) else file_name
-    pp(f"file is {file_name} of type {type(file_name)}")
+    if not file_name.exists():
+        msg = f"{file_name} was not found"
+        raise FileNotFoundError(msg)
+
     match file_name.suffix:
         case ".csv":
-            X_in, Y_in, featname = input_csv_file(file_name, **kwargs)
+            X_in, Y_in, featname = input_txt_file(file_name, output=output, sep=",")
         case ".tsv":
-            X_in, Y_in, featname = input_tsv_file(file_name, **kwargs)
+            X_in, Y_in, featname = input_txt_file(file_name, output=output, sep="\t")
         case ".mat":
             X_in, Y_in, featname = input_matlab_file(file_name)
         case ".txt":

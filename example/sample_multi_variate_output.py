@@ -1,13 +1,12 @@
 #!/usr/bin.env python
-# coding: utf-8
+import importlib.resources as ir
 
 from pyhsiclasso import HSICLasso
 
 
 def main():
     hsic_lasso = HSICLasso()
-    hsic_lasso.input(
-        "../tests/test_data/csv_data_mv.csv", output_list=["output1", "output2"]
+    hsic_lasso.input(ir.files("tests").joinpath("test_data", "csv_data_mv.csv"), output=["output1", "output2"]
     )
     hsic_lasso.regression(5)
     hsic_lasso.dump()
