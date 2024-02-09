@@ -7,6 +7,7 @@ import numpy.typing as npt
 import pandas as pd
 from loguru import logger
 from rich import print as pp
+from rich.table import Table
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial import distance
 
@@ -230,30 +231,38 @@ class HSICLasso:
 
         return True
 
-    def dump(self):
-        maxval = self.beta[self.A[0]][0]
-        results = [
-            " HSICLasso : Result ",
-            f"| Order | Feature      | Score | Top-{min(5, len(self.beta) - 1)} Related Feature (Relatedness Score)",
-        ]
-        for i in range(len(self.A)):
-            ofs = f"| {i + 1:<5} | {self.featname[self.A[i]]:<12} | {self.beta[self.A[i]][0] / maxval:.3f} |"
-            rf = [
-                f" {self.featname[nn]:<12} ({ns:.3f})"
-                for nn, ns, _ in zip(self.A_neighbors[i][1:], self.A_neighbors_score[i][1:], range(5), strict=False)
-            ]
-            row = ofs + ",".join(rf)
-            results.append(row + " " * max(0, len(results[1]) - len(row)) + "|")
+    def dump(self, num_neighbors: int = 5) -> Table:
+        table_data = self.dump_dict()
 
-        # results[1] = results[1] + " " * max(0, len(row) - len(results[1])) + "|"
-        # deco = "=" * ((len(results[1]) - len(results[0])) // 2)
-        # results[0] = deco + results[0] + deco
-        pp("\n".join(results))
+        table = Table(title="HSIC-lasso results")
+        table.add_column("Order", max_width=5, justify="right", no_wrap=True)
+        table.add_column("Feature", justify="left", no_wrap=True)
+        table.add_column("Score", justify="center", no_wrap=True)
+        for i in range(num_neighbors):
+            table.add_column("Related\nfeature\n" + f"{i+1}", justify="left", no_wrap=False, min_width=7)
+            table.add_column("Related\nfeature\n" + f"{i+1} score", justify="center", no_wrap=False, min_width=10)
 
-        # pp("===== HSICLasso : Path ======")
-        # for i in range(len(self.A)):
-        #    pp(self.path[self.A[i], 1:])
-        # return True
+        for i, j in enumerate(table_data):
+            new_list = []
+            for k in table_data[j]["related"]:
+                new_list.extend((k, f'{table_data[j]["related"][k]:.3f}'))
+            table.add_row(str(i), str(j), f'{table_data[j]["score"]:.3f}', *new_list)
+        return table
+
+    def dump_dict(self, num_heighbors: int = 5) -> dict:
+        return {
+            self.featname[self.A[i]]: {
+                "order": i + 1,
+                "score": self.beta[self.A[i]][0] / self.beta[self.A[0]][0],
+                "related": {
+                    self.featname[nn]: ns
+                    for nn, ns, _ in zip(
+                        self.A_neighbors[i][1:], self.A_neighbors_score[i][1:], range(num_heighbors), strict=False
+                    )
+                },
+            }
+            for i in range(len(self.A))
+        }
 
     def plot_heatmap(self, filepath="heatmap.png"):
         if self.linkage_dist is None or self.hclust_featname is None or self.hclust_featnameindex is None:

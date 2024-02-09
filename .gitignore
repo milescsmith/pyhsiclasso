@@ -119,3 +119,4 @@ venv.bak/
 # End of https://www.gitignore.io/api/visualstudiocode
 debug.py
 *.ipynb
+.jupyter_ystore.db
