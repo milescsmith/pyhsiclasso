@@ -245,9 +245,9 @@ class HSICLasso:
             row = ofs + ",".join(rf)
             results.append(row + " " * max(0, len(results[1]) - len(row)) + "|")
 
-        results[1] = results[1] + " " * max(0, len(row) - len(results[1])) + "|"
-        deco = "=" * ((len(results[1]) - len(results[0])) // 2)
-        results[0] = deco + results[0] + deco
+        # results[1] = results[1] + " " * max(0, len(row) - len(results[1])) + "|"
+        # deco = "=" * ((len(results[1]) - len(results[0])) // 2)
+        # results[0] = deco + results[0] + deco
         pp("\n".join(results))
 
         # pp("===== HSICLasso : Path ======")
@@ -486,8 +486,8 @@ class HSICLasso:
             featname = df.columns.intersection(featname).to_list()
             X_in = df.loc[:, featname].to_numpy()
         else:
-            featname = [str(x) for x in range(1, df.shape[1] + 1)]
-            X_in = df.drop(columns=output)
+            X_in = df.drop(columns=output).to_numpy()
+            featname = df.drop(columns=output).columns.to_list()
 
         if any(pd.isnull(Y_in)):
             msg = "Found null values in output. Remove or fix these and try again."
