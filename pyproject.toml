@@ -1,10 +1,18 @@
-[tool.poetry]
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+authors = [
+    {name = "Makoto Yamada", email = "makoto.yamada@riken.jp"},
+]
+license = {text = "MIT"}
+requires-python = ">=3.11"
+
 name = "pyhsiclasso"
-version = "1.12.0"
+version = "1.13.0"
 description = "Supervised, nonlinear feature selection method for high-dimensional datasets."
-authors = ["Makoto Yamada <makoto.yamada@riken.jp>"]
-license = "MIT"
-classifiers=[
+classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
@@ -15,167 +23,42 @@ classifiers=[
     "Topic :: Scientific/Engineering",
 ]
 readme = "README.md"
-homepage = "http://www.makotoyamada-ml.com/hsiclasso.html"
 keywords = [
     "HSIC",
     "Lasso",
     "feature-selection",
     "feature-extraction",
-    "machine-learning"
+    "machine-learning",
 ]
-exclude = ["*.tests", "*.tests.*", "tests.*", "tests"]
-
-[tool.poetry.dependencies]
-matplotlib = "^3.8"
-numpy = ">=1.24,<1.25"
-pandas = ">=2.1"
-scipy = "^1.12"
-seaborn = "^0.13"
-joblib = "^1.3"
-python = ">=3.10,<4"
-pyarrow = "^15.0.0"
-loguru = "^0.7.2"
-rich = "^13.7.0"
-
-[tool.poetry.group.dev.dependencies]
-nox = "^2023.4.22"
-black = "^24.1.1"
-ruff = "^0.2.0"
-pytest-runner = "^6.0.1"
-pytest = "^8.0.0"
-nox-poetry = "^1.0.3"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.isort]
-known_typing = "typing,types,typing_extensions,mypy,mypy_extensions"
-sections = "FUTURE,TYPING,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
-include_trailing_comma = true
-default_section = "FIRSTPARTY"
-multi_line_output = 3
-indent = 4
-force_grid_wrap = 0
-use_parentheses = true
-line_length = 80
-
-[tool.black]
-line-length = 120
-target-version = ["py310"]
-skip-string-normalization = true
-include = '\.pyi?$'
-exclude = '''
-(
-  /(
-      \.eggs         # exclude a few common directories in the
-    | \.git          # root of the project
-    | \.hg
-    | \.mypy_cache
-    | \.tox
-    | \.venv
-    | _build
-    | buck-out
-    | build
-    | dist
-  )/
-  | foo.py           # also separately exclude a file named foo.py in
-                     # the root of the project
-)
-'''
-
-[tool.ruff]
-target-version = "py310"
-line-length = 120
-lint.select = [
-    "A",
-    "ARG",
-    "B",
-    "C",
-    "DTZ",
-    "E",
-    "EM",
-    "F",
-    "FBT",
-    "I",
-    "I001",
-    "ICN",
-    "ISC",
-    "N",
-    "PLC",
-    "PLE",
-    "PLR",
-    "PLW",
-    "Q",
-    "RUF",
-    "S",
-    "T",
-    "TID",
-    "UP",
-    "W",
-    "YTT",
+dependencies = [
+    "pandas>=2.2.2",
+    "scipy>=1.14.1",
+    "seaborn>=0.13.2",
+    "joblib>=1.4.2",
+    "pyarrow>=17.0.0",
+    "loguru>=0.7.2",
+    "rich>=13.7.1",
 ]
-lint.ignore = [
-    "B027",
-    "FBT003",
-    "S105",
-    "S106",
-    "S107",
-    "C901",
-    "PLR0911",
-    "PLR0912",
-    "PLR0913",
-    "PLR0915",
-    "FBT001",
-    "D100",
-    "D103",
-    "D205",
-    "D212",
-    "D415",
-    "E203",
-    "E501",
-    "N802",
-    "N803",
-    "N806",
+
+[project.urls]
+homepage = "http://www.makotoyamada-ml.com/hsiclasso.html"
+
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+dev = [
+    "nox>=2024.4.15",
+    "ruff>=0.6.1",
+    "pytest>=8.3.2",
+    "nox>=2024.4.15",
+    "pre-commit>=3.8.0",
+    "pytest-xdist>=3.6.1",
+    "pytest-random-order>=1.1.1",
+    "pytest-cov>=5.0.0",
+    "mypy>=1.11.1",
+    "coverage>=7.6.1",
+    "pandas-stubs>=2.2.2.240807",
 ]
-lint.unfixable = [
-    "F401",
-    "UP007",
-]
-exclude = [
-    ".git",
-    ".hg",
-    "__pycache__",
-    "_bin/*",
-    "_build/*",
-    "_ig_fbcode_wheel/*",
-    "buck-out/*",
-    "third-party-buck/*",
-    "third-party2/*",
-    "dist",
-    ".venv",
-    ".nox",
-    ".mypy_cache",
-    ".pytype",
-    ".svn",
-    "__pypackages__",
-]
-src = ["src"]
 
-[tool.ruff.lint.extend-per-file-ignores]
-"./tests/*" = ["S101", "PLR2004", "F811", "F401", "S301"]
-"**/main.py" = ["UP007", "FBT002"]
 
-[tool.ruff.lint.mccabe]
-max-complexity = 50
-
-[tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all"
-
-[tool.mypy]
-strict = true
-warn_unreachable = true
-pretty = true
-show_column_numbers = true
-show_error_codes = true
-show_error_context = true
+[tool.pdm.build]
+excludes = ["*.tests", "*.tests.*", "tests.*", "tests"]

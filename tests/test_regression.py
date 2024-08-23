@@ -36,8 +36,8 @@ def test_regression(
 ):
     if input_data:
         hsic_obj.input(load_input_data(input_data))
-    hsic_obj.regression(num_feat, B=test_b, M=test_m, covars=load_covars)
-    assert hsic_obj.A == expected_a
+    hsic_obj.regression(num_feat, b=test_b, m=test_m, covars=load_covars)
+    assert hsic_obj.a == expected_a
 
 
 @pytest.mark.parametrize("input_data", ["csv_data.csv"])
@@ -46,18 +46,18 @@ def test_regression_non_divisor_block_size(
 ):
     with warnings.catch_warnings(record=True) as w:
         hsic_obj.input(load_input_data(input_data))
-        B = int(hsic_obj.X_in.shape[1] / 2) - 1
-        n = hsic_obj.X_in.shape[1]
-        numblocks = n / B
-        hsic_obj.regression(10, B, 10)
+        b = int(hsic_obj.x_in.shape[1] / 2) - 1
+        n = hsic_obj.x_in.shape[1]
+        numblocks = n / b
+        hsic_obj.regression(10, b, 10)
 
         nptst.assert_equal(
-            hsic_obj.A,
+            hsic_obj.a,
             [1422, 248, 512, 1581, 1670, 764, 1771, 896, 779, 398],
         )
         assert len(w) == 1
         assert w[-1].category is RuntimeWarning
         assert (
             str(w[-1].message)
-            == f"B {B} must be an exact divisor of the number of samples {n}. Number of blocks {numblocks} will be approximated to {int(numblocks)}."
+            == f"B {b} must be an exact divisor of the number of samples {n}. Number of blocks {numblocks} will be approximated to {int(numblocks)}."
         )

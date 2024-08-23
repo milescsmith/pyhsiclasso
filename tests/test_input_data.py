@@ -13,6 +13,6 @@ from pyhsiclasso import input_file
     ],
 )
 def test_input(load_input_data, input_data, x_shape, y_shape):
-    X_in, Y_in, _ = input_file(load_input_data(input_data))
-    assert x_shape == X_in.shape
-    assert y_shape == Y_in.shape
+    x_in, y_in, _ = input_file(load_input_data(input_data))
+    assert x_shape == x_in.shape
+    assert y_shape == y_in.shape

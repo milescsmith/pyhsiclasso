@@ -5,8 +5,8 @@ from loguru import logger
 
 
 def init_logger(verbose: int, save_log: bool = True, msg_format: str | None = None) -> None:
-    logger.enable("pyalra")
-    timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
+    logger.enable(__package__)
+    timezone = datetime.datetime.now(datetime.UTC).astimezone().tzinfo
 
     try:
         from IPython import get_ipython
@@ -17,36 +17,36 @@ def init_logger(verbose: int, save_log: bool = True, msg_format: str | None = No
 
     if msg_format is None:
         if in_notebook:
-            msg_format = "<green>{name}</green>:<red>{function}</red>:<blue>{line}</blue>·-·<level>{message}</level>"
+            msg_format = (
+                "{level}|<green>{name}</green>:<red>{function}</red>:<blue>{line}</blue> - <level>{message}</level>"
+            )
         else:
-            msg_format = "{time:YYYY-MM-DD at HH:mm:ss} | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan>·-·<level>{message}</level>"
+            msg_format = "{time:YYYY-MM-DD HH:mm:ss}|{level}|<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
 
     match verbose:
         case 3:
-            log_level = "DEBUG"  # catches DEBUG, INFO, WARNING, ERROR, CRITICAL, and EXCEPTION
+            log_level = "DEBUG"  # catches DEBUG, INFO, WARNING, ERROR, and CRITICAL
         case 2:
-            log_level = "INFO"  # catches INFO, WARNING, ERROR, CRITICAL, and EXCEPTION
+            log_level = "INFO"  # catches INFO, WARNING, ERROR, and CRITICAL
         case 1:
-            log_level = "WARNING"  # catches WARNING, ERROR, CRITICAL, and EXCEPTION
+            log_level = "WARNING"  # catches WARNING, ERROR, and CRITICAL
         case _:
-            log_level = "ERROR"  # Catches ERROR, CRITICAL, and EXCEPTION
+            log_level = "ERROR"  # Catches ERROR and CRITICAL
 
     config = {
         "handlers": [
-            {"sink": stderr, "format": msg_format, "level": log_level},
+            {"sink": stderr, "format": msg_format, "level": log_level, "filter": __package__},
         ]
     }
+    logger.configure(**config)
 
     if save_log:
-        config["handlers"].append(
-            {
-                "sink": f"pyalra_{datetime.datetime.now(tz=timezone).strftime('%Y-%d-%m--%H-%M-%S')}.log",
-                "level": "DEBUG",
-                "format": "{time:YYYY-MM-DD at HH:mm:ss} | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan>·-·<level>{message}</level>",
-                "filter": "pyalra",
-                "backtrace": True,
-                "diagnose": True,
-            }
+        logger.add(
+            sink=f"{__package__}_{datetime.datetime.now(tz=timezone).strftime('%Y-%d-%m--%H-%M-%S')}.log",
+            level=log_level,
+            format="{time:YYYY-MM-DD HH:mm:ss}|{level}|{name}:{function}:{line} - {message}",
+            filter="dsd",
+            backtrace=True,
+            diagnose=True,
+            colorize=False,
         )
-
-    logger.configure(**config)
