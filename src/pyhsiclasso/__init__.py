@@ -6,7 +6,6 @@ from loguru import logger
 
 from pyhsiclasso.api import HSICLasso
 from pyhsiclasso.hsic_lasso import hsic_lasso
-from pyhsiclasso.input_data import input_file
 
 try:
     __version__ = version(__package__)
@@ -18,5 +17,4 @@ logger.disable(__package__)
 __all__ = [
     "HSICLasso",
     "hsic_lasso",
-    "input_file",
 ]
