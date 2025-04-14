@@ -41,7 +41,10 @@ def hsic_lasso(
         warnings.filterwarnings("ignore", category=DeprecationWarning, module="joblib")
         with parallel_config(backend="loky", n_jobs=n_jobs):
             result = Parallel()(
-                [delayed(parallel_compute_kernel)(np.reshape(x[k, :], (1, n)), x_kernel, k, b, M, discarded) for k in range(d)]
+                [
+                    delayed(parallel_compute_kernel)(np.reshape(x[k, :], (1, n)), x_kernel, k, b, M, discarded)
+                    for k in range(d)
+                ]
             )
 
     # non-parallel version for debugging purposes

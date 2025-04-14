@@ -2,13 +2,16 @@
 from typing import Final
 
 import numpy as np
+import numpy.typing as npt
 from rich import print as pp
 from scipy.sparse import lil_matrix
 
 A_VERY_SMALL_NUMBER: Final[int] = 1e-9
 
 
-def nlars(X, x_ty, num_feat, max_neighbors):
+def nlars(
+    X: npt.NDArray, x_ty: npt.NDArray, num_feat: int, max_neighbors: int
+) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray, list[list[int]]]:
     """
     We used the a Python implementation of the Nonnegative LARS solver
     written in MATLAB at http://orbit.dtu.dk/files/5618980/imm5523.zip
@@ -25,14 +28,14 @@ def nlars(X, x_ty, num_feat, max_neighbors):
         X_ty         vector of size D x 1
         num_feat     the number of features you want to extract
     Output:
-        path         the entire solution path
-        beta         D x 1 solution vector
-        A            selected features
-        A_neighbors  related features of the selected features in A
-        lam(lambda)  regularization value at beginning of step corresponds
-                     to value of negative gradient
+        path: NDArray                 the entire solution path
+        beta: NDArray                 D x 1 solution vector
+        A: list[int]                  selected features
+        A_neighbors: NDArray          related features of the selected features in A
+        lam(lambda): list[list[int]]  regularization value at beginning of step corresponds
+                                      to value of negative gradient
     """
-    n, d = X.shape
+    _, d = X.shape
 
     a_neighbors = []
     a_neighbors_score = []
@@ -114,7 +117,7 @@ def nlars(X, x_ty, num_feat, max_neighbors):
     s = beta[a]
     sort_index = sorted(range(len(s)), key=lambda k: s[k], reverse=True)
 
-    a_sorted = [a[i] for i in sort_index]
+    a_sorted = np.array([a[i] for i in sort_index])
 
     # Find nighbors of selected features
     xtxa = np.dot(X.transpose(), X[:, a_sorted])

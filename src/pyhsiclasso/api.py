@@ -13,7 +13,6 @@ from scipy.cluster.hierarchy import linkage
 from scipy.spatial import distance
 
 from pyhsiclasso.hsic_lasso import compute_kernel, hsic_lasso
-from pyhsiclasso.input_data import input_file
 from pyhsiclasso.nlars import nlars
 from pyhsiclasso.plot_figure import plot_dendrogram, plot_heatmap, plot_path
 
@@ -23,21 +22,21 @@ TWO_DIMENSIONAL: Final[int] = 2
 class HSICLasso:
     def __init__(self):
         self.input_file = None
-        self.x_in = None
-        self.y_in = None
-        self.x = None
-        self.xty = None
-        self.path = None
-        self.beta = None
-        self.a = None
-        self.a_neighbors = None
-        self.a_neighbors_score = None
-        self.lam = None
-        self.featname = None
-        self.linkage_dist = None
-        self.hclust_featname = None
-        self.hclust_featnameindex = None
-        self.max_neighbors = 10
+        self.x_in: npt.NDarray | None = None
+        self.y_in: npt.NDarray | None = None
+        self.x: npt.NDarray | None = None
+        self.xty: npt.NDarray | None = None
+        self.path: npt.NDarray | None = None
+        self.beta: npt.NDarray | None = None
+        self.a: list[int] | npt.NDarray | None = None
+        self.a_neighbors: npt.NDarray | None = None
+        self.a_neighbors_score: list[list[int]] | None = None
+        self.lam: npt.NDarray | None = None
+        self.featname: list[str] | None = None
+        self.linkage_dist: npt.NDarray | None = None
+        self.hclust_featname: list[str] | None = None
+        self.hclust_featnameindex: list[int] | None = None
+        self.max_neighbors: int = 10
 
     def input(
         self,
@@ -46,8 +45,8 @@ class HSICLasso:
         featname: list[str] | npt.NDArray | pd.Series | None = None,
     ):
         match input_data:
-            case str() | Path():
-                self._input_data_file(input_data, output)
+            # case str() | Path():
+            #     self._input_data_file(input_data, output)
             case np.ndarray() if not isinstance(output, list | np.ndarray | pd.Series):
                 msg = (
                     "output is an invalid type. When input_list is a numpy array, "
@@ -242,14 +241,14 @@ class HSICLasso:
         table.add_column("Feature", justify="left", no_wrap=True)
         table.add_column("Score", justify="center", no_wrap=True)
         for i in range(num_neighbors):
-            table.add_column("Related\nfeature\n" + f"{i+1}", justify="left", no_wrap=False, min_width=7)
-            table.add_column("Related\nfeature\n" + f"{i+1} score", justify="center", no_wrap=False, min_width=10)
+            table.add_column("Related\nfeature\n" + f"{i + 1}", justify="left", no_wrap=False, min_width=7)
+            table.add_column("Related\nfeature\n" + f"{i + 1} score", justify="center", no_wrap=False, min_width=10)
 
         for i, j in enumerate(table_data):
             new_list: list[str] = []
             for k in table_data[j]["related"]:
-                new_list.extend((k, f'{table_data[j]["related"][k]:.3f}'))
-            table.add_row(str(i), str(j), f'{table_data[j]["score"]:.3f}', *new_list)
+                new_list.extend((k, f"{table_data[j]['related'][k]:.3f}"))
+            table.add_row(str(i), str(j), f"{table_data[j]['score']:.3f}", *new_list)
         return table
 
     def dump_dict(self, num_heighbors: int = 5) -> dict:
@@ -396,9 +395,9 @@ class HSICLasso:
                 sstr = f"{','.join(tmp)}\n"
                 fout.write(sstr)
 
-    def _input_data_file(self, file_name: str | Path, output: str | list[str]) -> bool:
-        self.x_in, self.y_in, self.featname = input_file(file_name, output=output)
-        return True
+    # def _input_data_file(self, file_name: str | Path, output: str | list[str]) -> bool:
+    #     self.x_in, self.y_in, self.featname = input_file(file_name, output=output)
+    #     return True
 
     def _input_data_list(self, x_in, y_in):
         if isinstance(y_in[0], list):
@@ -450,7 +449,7 @@ class HSICLasso:
         if featname is not None:
             missing_features = featname[~featname.isin(df.columns)]
             if any(missing_features):
-                logger.warning(f"{', '.join(missing_features) } were not found in the data")
+                logger.warning(f"{', '.join(missing_features)} were not found in the data")
             featname = df.columns.intersection(featname).to_list()
             x_in = df.loc[:, featname].to_numpy()
         else:
