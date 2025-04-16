@@ -37,7 +37,7 @@ def test_regression(
     if input_data:
         hsic_obj.input(load_input_data(input_data))
     hsic_obj.regression(num_feat, b=test_b, m=test_m, covars=load_covars)
-    assert hsic_obj.a == expected_a
+    nptst.assert_allclose(hsic_obj.a, expected_a)
 
 
 @pytest.mark.parametrize("input_data", ["csv_data.csv"])

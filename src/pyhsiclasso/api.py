@@ -13,6 +13,7 @@ from scipy.cluster.hierarchy import linkage
 from scipy.spatial import distance
 
 from pyhsiclasso.hsic_lasso import compute_kernel, hsic_lasso
+from pyhsiclasso.input_data import input_file
 from pyhsiclasso.nlars import nlars
 from pyhsiclasso.plot_figure import plot_dendrogram, plot_heatmap, plot_path
 
@@ -45,8 +46,8 @@ class HSICLasso:
         featname: list[str] | npt.NDArray | pd.Series | None = None,
     ):
         match input_data:
-            # case str() | Path():
-            #     self._input_data_file(input_data, output)
+            case str() | Path():
+                self._input_data_file(input_data, output)
             case np.ndarray() if not isinstance(output, list | np.ndarray | pd.Series):
                 msg = (
                     "output is an invalid type. When input_list is a numpy array, "
@@ -395,9 +396,9 @@ class HSICLasso:
                 sstr = f"{','.join(tmp)}\n"
                 fout.write(sstr)
 
-    # def _input_data_file(self, file_name: str | Path, output: str | list[str]) -> bool:
-    #     self.x_in, self.y_in, self.featname = input_file(file_name, output=output)
-    #     return True
+    def _input_data_file(self, file_name: str | Path, output: str | list[str]) -> bool:
+        self.x_in, self.y_in, self.featname = input_file(file_name, output=output)
+        return True
 
     def _input_data_list(self, x_in, y_in):
         if isinstance(y_in[0], list):

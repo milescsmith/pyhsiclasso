@@ -3,7 +3,7 @@ from typing import Final
 
 import numpy as np
 import numpy.typing as npt
-from rich import print as pp
+from rich.progress import Progress
 from scipy.sparse import lil_matrix
 
 A_VERY_SMALL_NUMBER: Final[int] = 1e-9
@@ -59,54 +59,57 @@ def nlars(
 
     k = 0
 
-    while sum(c[a]) / len(a) >= A_VERY_SMALL_NUMBER and len(a) < num_feat + 1:
-        pp(f"{k=}")
-        s = np.ones((len(a), 1), dtype=np.float32)
+    with Progress() as progress:
+        task = progress.add_task("[red]Calculating nlars...[/red]", total=num_feat + 1)
 
-        try:
-            w = np.linalg.solve(np.dot(X[:, a].transpose(), X[:, a]), s)
-        except np.linalg.linalg.LinAlgError:
-            # matrix is singular
-            x_noisy = X[:, a] + np.random.normal(0, 10e-10, X[:, a].shape)
-            w = np.linalg.solve(np.dot(x_noisy.transpose(), x_noisy), s)
+        while sum(c[a]) / len(a) >= A_VERY_SMALL_NUMBER and len(a) < num_feat + 1:
+            progress.update(task, advance=1)
+            s = np.ones((len(a), 1), dtype=np.float32)
 
-        xtxw = np.dot(X.transpose(), np.dot(X[:, a], w))
+            try:
+                w = np.linalg.solve(np.dot(X[:, a].transpose(), X[:, a]), s)
+            except np.linalg.linalg.LinAlgError:
+                # matrix is singular
+                x_noisy = X[:, a] + np.random.normal(0, 10e-10, X[:, a].shape)
+                w = np.linalg.solve(np.dot(x_noisy.transpose(), x_noisy), s)
 
-        gamma1 = (big_c - c[indices]) / (xtxw[a[0]] - xtxw[indices])
-        gamma2 = -beta[a] / (w)
-        gamma3 = np.zeros((1, 1))
-        gamma3[0] = c[a[0]] / (xtxw[a[0]])
-        gamma = np.concatenate((np.concatenate((gamma1, gamma2)), gamma3))
+            xtxw = np.dot(X.transpose(), np.dot(X[:, a], w))
 
-        gamma[gamma <= A_VERY_SMALL_NUMBER] = np.inf
-        t = gamma.argmin()
-        mu = min(gamma)
+            gamma1 = (big_c - c[indices]) / (xtxw[a[0]] - xtxw[indices])
+            gamma2 = -beta[a] / (w)
+            gamma3 = np.zeros((1, 1))
+            gamma3[0] = c[a[0]] / (xtxw[a[0]])
+            gamma = np.concatenate((np.concatenate((gamma1, gamma2)), gamma3))
 
-        beta[a] = beta[a] + mu * w
+            gamma[gamma <= A_VERY_SMALL_NUMBER] = np.inf
+            t = gamma.argmin()
+            mu = min(gamma)
 
-        if t >= len(gamma1) and t < (len(gamma1) + len(gamma2)):
-            lasso_cond = 1
-            j = t - len(gamma1)
-            indices.append(a[j])
-            a.remove(a[j])
-        else:
-            lasso_cond = 0
+            beta[a] = beta[a] + mu * w
 
-        xtxbeta = np.dot(X.transpose(), np.dot(X, beta))
-        c = x_ty - xtxbeta
-        j = np.argmax(c[indices])
-        big_c = max(c[indices])
+            if t >= len(gamma1) and t < (len(gamma1) + len(gamma2)):
+                lasso_cond = 1
+                j = t - len(gamma1)
+                indices.append(a[j])
+                a.remove(a[j])
+            else:
+                lasso_cond = 0
 
-        k += 1
-        path[:, k] = beta
+            xtxbeta = np.dot(X.transpose(), np.dot(X, beta))
+            c = x_ty - xtxbeta
+            j = np.argmax(c[indices])
+            big_c = max(c[indices])
 
-        if len(big_c) == 0:
-            lam[k] = 0
-        else:
-            lam[0, k] = big_c[0]
-        if lasso_cond == 0:
-            a.append(indices[j])
-            indices.remove(indices[j])
+            k += 1
+            path[:, k] = beta
+
+            if len(big_c) == 0:
+                lam[k] = 0
+            else:
+                lam[0, k] = big_c[0]
+            if lasso_cond == 0:
+                a.append(indices[j])
+                indices.remove(indices[j])
 
     # We run numfeat + 1 iteration to update beta and path information
     # Then, we return only numfeat features

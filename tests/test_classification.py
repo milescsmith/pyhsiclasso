@@ -3,6 +3,7 @@
 import warnings
 from collections.abc import Callable
 from typing import Any, Literal
+import numpy.testing as nptst
 
 import pytest
 
@@ -80,7 +81,7 @@ def test_classification(
     b = int(hsic_obj.x_in.shape[1] / b_divisor) if b_divisor > 0 else 0
     hsic_obj.classification(num_feat=num_feat, b=b, m=m, discrete_x=discrete_x, n_jobs=1, covars=load_covars)
 
-    assert hsic_obj.a == expected_a
+    nptst.assert_allclose(hsic_obj.a, expected_a)
 
 
 @pytest.mark.parametrize(
@@ -107,7 +108,7 @@ def test_classification_non_divisor_block_size(
         numblocks = n / b
 
         hsic_obj.classification(num_feat=num_feat, b=b, m=m, discrete_x=True, covars=load_covars)
-        assert hsic_obj.a == expected_a
+        nptst.assert_allclose(hsic_obj.a, expected_a)
         assert len(w) == 1
         assert w[-1].category is RuntimeWarning
         assert (
