@@ -7,10 +7,10 @@ authors = [
     {name = "Makoto Yamada", email = "makoto.yamada@riken.jp"},
 ]
 license = {text = "MIT"}
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 
 name = "pyhsiclasso"
-version = "1.15.0"
+version = "1.15.1"
 description = "Supervised, nonlinear feature selection method for high-dimensional datasets."
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -19,7 +19,10 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering",
 ]
 readme = "README.md"
